@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kisansetu - Farmer Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar {
+            background-color: #34a853;
+            padding: 1rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar h1 {
+            color: white;
+            margin: 0;
+        }
+        .dashboard-container {
+            padding: 80px 20px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .chart {
+            height: 300px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin: 20px 0;
+            padding: 20px;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+        .product-image-preview {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .product-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .image-preview-container {
+            width: 100%;
+            max-width: 200px;
+            margin: 10px auto;
+        }
+        .image-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+        .add-product-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .add-product-btn:hover {
+            background: #45a049;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 60px 10px 10px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                padding: 0.5rem;
+            }
+
+            .navbar h1 {
+                font-size: 1.2rem;
+            }
+
+            .section {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 10px;
+            }
+
+            .chart {
+                height: 200px;
+                padding: 10px;
+            }
+
+            .product-image-preview {
+                width: 100%;
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body style="background-color: #f0f2f5; margin: 0; font-family: Arial, sans-serif;">
+    <div class="navbar">
+        <h1>Kisansetu Farmer Dashboard</h1>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Product Management Section -->
+        <div class="section">
+            <h2>Product Management</h2>
+            <button class="add-product-btn" onclick="addNewProduct()">
+                <i class="fas fa-plus"></i> Add New Product
+            </button>
+            <div id="productList" class="grid"></div>
+        </div>
+
+        <!-- Order Management Section -->
+        <div class="section">
+            <h2>Order Management</h2>
+            <div id="orderList"></div>
+        </div>
+
+        <!-- Earnings Section -->
+        <div class="section">
+            <h2>Earnings & Payouts</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Total Earnings</h3>
+                    <h2 id="totalEarnings">₹0</h2>
+                </div>
+                <div class="card">
+                    <h3>Pending Payouts</h3>
+                    <h2 id="pendingPayouts">₹0</h2>
+                </div>
+                <div class="card">
+                    <h3>This Month</h3>
+                    <h2 id="monthlyEarnings">₹0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div class="section">
+            <h2>Sales & Performance Analytics</h2>
+            <div class="chart" id="salesChart">
+                <!-- Chart will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="section">
+            <h2>Product Reviews</h2>
+            <div id="reviewList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Product Management
+        const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+        
+        function showAddProductForm() {
+            const formHTML = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                    <form class="product-form" id="productForm">
+                        <h3>Add New Product</h3>
+                        <div class="image-preview-container">
+                            <img id="imagePreview" class="image-preview" src="https://via.placeholder.com/200?text=Select+Image">
+                        </div>
+                        <input type="file" id="productImage" accept="image/*" required
+                            onchange="previewImage(this)"
+                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="text" placeholder="Product Name" id="productName" required
+                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="number" placeholder="Price per kg" id="productPrice" required
+                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="number" placeholder="Stock quantity (kg)" id="productStock" required
+                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <select id="productCategory" required
+                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="">Select Category</option>
+                            <option value="vegetables">Vegetables</option>
+                            <option value="fruits">Fruits</option>
+                            <option value="grains">Grains</option>
+                            <option value="dairy">Dairy</option>
+                            <option value="pulses">Pulses</option>
+                            <option value="spices">Spices</option>
+                        </select>
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" onclick="closeProductForm()"
+                                style="padding: 8px 16px; border: 1px solid #ddd; border-radius: 4px;">Cancel</button>
+                            <button type="submit"
+                                style="padding: 8px 16px; background: #34a853; color: white; border: none; border-radius: 4px;">Add Product</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', formHTML);
+            
+            // Form submission
+            document.getElementById('productForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const imageFile = document.getElementById('productImage').files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    const product = {
+                        name: document.getElementById('productName').value,
+                        price: parseFloat(document.getElementById('productPrice').value),
+                        stock: parseInt(document.getElementById('productStock').value),
+                        category: document.getElementById('productCategory').value,
+                        image: event.target.result,
+                        id: Date.now()
+                    };
+                    
+                    products.push(product);
+                    localStorage.setItem('farmerProducts', JSON.stringify(products));
+                    updateProductList();
+                    closeProductForm();
+                    
+                    // Dispatch event for real-time sync
+                    window.dispatchEvent(new CustomEvent('productsUpdated'));
+                };
+                
+                reader.readAsDataURL(imageFile);
+            });
+        }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function closeProductForm() {
+            const form = document.querySelector('.product-form').parentElement;
+            form.remove();
+        }
+
+        function updateProductList() {
+            const productList = document.getElementById('productList');
+            productList.innerHTML = products.map(product => `
+                <div class="card">
+                    <img src="${product.image}" alt="${product.name}" class="product-image-preview">
+                    <h3>${product.name}</h3>
+                    <p>Price: ₹${product.price}/kg</p>
+                    <p>Stock: ${product.stock} kg</p>
+                    <p>Category: ${product.category}</p>
+                    <button onclick="updateProduct(${product.id})" 
+                        style="background: #1a73e8; color: white; border: none; padding: 5px 10px; border-radius: 4px; margin-right: 5px;">
+                        Update
+                    </button>
+                    <button onclick="deleteProduct(${product.id})" 
+                        style="background: #ea4335; color: white; border: none; padding: 5px 10px; border-radius: 4px;">
+                        Delete
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const formHTML = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                    <form class="product-form" id="updateForm">
+                        <h3>Update Product</h3>
+                        <div class="image-preview-container">
+                            <img id="updateImagePreview" class="image-preview" src="${product.image}">
+                        </div>
+                        <input type="file" id="updateProductImage" accept="image/*"
+                            onchange="previewImage(this)"
+                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="number" id="updateStock" value="${product.stock}" required
+                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="number" id="updatePrice" value="${product.price}" required
+                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" onclick="closeUpdateForm()"
+                                style="padding: 8px 16px; border: 1px solid #ddd; border-radius: 4px;">Cancel</button>
+                            <button type="submit"
+                                style="padding: 8px 16px; background: #34a853; color: white; border: none; border-radius: 4px;">Update</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', formHTML);
+
+            document.getElementById('updateForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const imageFile = document.getElementById('updateProductImage').files[0];
+                
+                if (imageFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        updateProductData(productId, event.target.result);
+                    };
+                    reader.readAsDataURL(imageFile);
+                } else {
+                    updateProductData(productId);
+                }
+            });
+        }
+
+        function updateProductData(productId, newImage = null) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                product.stock = parseInt(document.getElementById('updateStock').value);
+                product.price = parseFloat(document.getElementById('updatePrice').value);
+                if (newImage) {
+                    product.image = newImage;
+                }
+                localStorage.setItem('farmerProducts', JSON.stringify(products));
+                updateProductList();
+                closeUpdateForm();
+                
+                // Dispatch event for real-time sync
+                window.dispatchEvent(new CustomEvent('productsUpdated'));
+            }
+        }
+
+        function closeUpdateForm() {
+            const form = document.querySelector('#updateForm').parentElement;
+            form.remove();
+        }
+
+        function deleteProduct(productId) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                const index = products.findIndex(p => p.id === productId);
+                if (index > -1) {
+                    products.splice(index, 1);
+                    localStorage.setItem('farmerProducts', JSON.stringify(products));
+                    updateProductList();
+                    
+                    // Dispatch event for real-time sync
+                    window.dispatchEvent(new CustomEvent('productsUpdated'));
+                }
+            }
+        }
+
+        // Order Management
+        const orders = [
+            { id: 1, product: 'Tomatoes', quantity: 10, status: 'Pending', amount: 400 },
+            { id: 2, product: 'Onions', quantity: 15, status: 'Delivered', amount: 450 }
+        ];
+
+        function updateOrderList() {
+            const orderList = document.getElementById('orderList');
+            orderList.innerHTML = orders.map(order => `
+                <div class="card">
+                    <h3>Order #${order.id}</h3>
+                    <p>${order.product} - ${order.quantity}kg</p>
+                    <p>Amount: ₹${order.amount}</p>
+                    <select onchange="updateOrderStatus(${order.id}, this.value)" 
+                        style="padding: 5px; border-radius: 4px;">
+                        <option ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option ${order.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                        <option ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                        <option ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                    </select>
+                </div>
+            `).join('');
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = newStatus;
+                
+                // If order is delivered, save to localStorage for review
+                if (newStatus === 'Delivered') {
+                    const customerOrders = JSON.parse(localStorage.getItem('customerOrders') || '[]');
+                    customerOrders.push({
+                        id: order.id,
+                        product: order.product,
+                        status: 'Delivered',
+                        reviewed: false,
+                        deliveryDate: new Date().toISOString()
+                    });
+                    localStorage.setItem('customerOrders', JSON.stringify(customerOrders));
+                }
+                
+                updateOrderList();
+            }
+        }
+
+        function checkReviews() {
+            const reviews = JSON.parse(localStorage.getItem('customerReviews') || '[]');
+            const reviewsList = document.getElementById('reviewList');
+            
+            reviewsList.innerHTML = reviews.map(review => `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between;">
+                        <h4>Order #${review.orderId}</h4>
+                        <div>${'⭐'.repeat(review.rating)}</div>
+                    </div>
+                    <p>${review.comment}</p>
+                    <small style="color: #666;">${new Date(review.date).toLocaleDateString()}</small>
+                </div>
+            `).join('') || '<p>No reviews yet</p>';
+        }
+
+        function addNewProduct() {
+            window.location.href = 'farmer_product_form.html';
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentFarmer = JSON.parse(localStorage.getItem('currentFarmer'));
+            if (!currentFarmer) {
+                window.location.href = 'login.html';
+            }
+
+            updateProductList();
+            updateOrderList();
+            
+            // Set dummy earnings data
+            document.getElementById('totalEarnings').textContent = '₹15,000';
+            document.getElementById('pendingPayouts').textContent = '₹2,500';
+            document.getElementById('monthlyEarnings').textContent = '₹4,200';
+
+            // Initialize review list
+            checkReviews();
+
+            // Add a simple chart (placeholder)
+            document.getElementById('salesChart').innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <p>Monthly Sales Trend</p>
+                    <div style="display: flex; align-items: flex-end; justify-content: space-around; height: 200px;">
+                        ${Array.from({length: 6}, () => 
+                            `<div style="width: 40px; height: ${Math.random() * 150 + 50}px; background: #34a853;"></div>`
+                        ).join('')}
+                    </div>
+                    <div style="display: flex; justify-content: space-around; margin-top: 10px;">
+                        ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map(month => 
+                            `<div style="width: 40px; text-align: center;">${month}</div>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Add review check interval
+            setInterval(checkReviews, 30000); // Check every 30 seconds
+        });
+    </script>
+</body>
+</html>

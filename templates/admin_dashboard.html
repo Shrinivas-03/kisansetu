@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kisansetu - Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Similar styles as customer dashboard */
+        .pending-approval {
+            border-left: 4px solid #ff4081;
+            background: #fff5f8;
+        }
+        .product-action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .approve-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .reject-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .farmers-section {
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .farmer-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 20px;
+            align-items: center;
+        }
+        .farmer-details {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .farmer-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-active { background: #e8f5e9; color: #2e7d32; }
+        .status-pending { background: #fff3e0; color: #ef6c00; }
+        .farmer-actions {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Admin Dashboard</h1>
+        
+        <!-- New Farmers Section -->
+        <div class="farmers-section">
+            <h2>Registered Farmers</h2>
+            <div id="farmersList"></div>
+        </div>
+
+        <!-- Existing Products Section -->
+        <div class="section">
+            <h2>Pending Product Approvals</h2>
+            <div id="pendingProducts" class="grid"></div>
+        </div>
+    </div>
+
+    <script>
+        class AdminDashboard {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.loadFarmers();
+                this.loadPendingProducts();
+                this.startSync();
+            }
+
+            startSync() {
+                setInterval(() => {
+                    this.loadFarmers();
+                    this.loadPendingProducts();
+                }, 5000);
+            }
+
+            loadFarmers() {
+                const farmers = JSON.parse(localStorage.getItem('farmers') || '[]');
+                this.displayFarmers(farmers);
+            }
+
+            displayFarmers(farmers) {
+                const container = document.getElementById('farmersList');
+                const html = farmers.map(farmer => `
+                    <div class="farmer-card">
+                        <div class="farmer-avatar">
+                            <i class="fas fa-user-circle fa-3x"></i>
+                        </div>
+                        <div class="farmer-details">
+                            <h3>${farmer.name}</h3>
+                            <p><i class="fas fa-phone"></i> ${farmer.phone}</p>
+                            <p><i class="fas fa-map-marker-alt"></i> ${farmer.location}</p>
+                            <p><i class="fas fa-seedling"></i> Categories: ${farmer.categories.join(', ')}</p>
+                            <span class="farmer-status ${farmer.isVerified ? 'status-active' : 'status-pending'}">
+                                ${farmer.isVerified ? 'Active' : 'Pending Verification'}
+                            </span>
+                        </div>
+                        <div class="farmer-actions">
+                            ${!farmer.isVerified ? `
+                                <button class="approve-btn" onclick="adminDashboard.verifyFarmer('${farmer.id}')">
+                                    <i class="fas fa-check"></i> Verify
+                                </button>
+                            ` : ''}
+                            <button class="reject-btn" onclick="adminDashboard.removeFarmer('${farmer.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                container.innerHTML = html || '<p>No farmers registered yet</p>';
+            }
+
+            verifyFarmer(farmerId) {
+                const farmers = JSON.parse(localStorage.getItem('farmers') || '[]');
+                const farmerIndex = farmers.findIndex(f => f.id === farmerId);
+                
+                if (farmerIndex !== -1) {
+                    farmers[farmerIndex].isVerified = true;
+                    farmers[farmerIndex].verificationDate = new Date().toISOString();
+                    localStorage.setItem('farmers', JSON.stringify(farmers));
+                    this.loadFarmers();
+                    this.showNotification('Farmer verified successfully');
+                }
+            }
+
+            removeFarmer(farmerId) {
+                if (confirm('Are you sure you want to remove this farmer?')) {
+                    const farmers = JSON.parse(localStorage.getItem('farmers') || '[]');
+                    const filteredFarmers = farmers.filter(f => f.id !== farmerId);
+                    localStorage.setItem('farmers', JSON.stringify(filteredFarmers));
+                    
+                    // Also remove their products
+                    const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+                    const filteredProducts = products.filter(p => p.farmerId !== farmerId);
+                    localStorage.setItem('farmerProducts', JSON.stringify(filteredProducts));
+                    
+                    this.loadFarmers();
+                    this.loadPendingProducts();
+                    this.showNotification('Farmer removed successfully');
+                }
+            }
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.textContent = message;
+                notification.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    background: #4CAF50;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    z-index: 1000;
+                `;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+            }
+
+            loadPendingProducts() {
+                const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+                const pendingProducts = products.filter(p => !p.isApproved);
+                this.displayPendingProducts(pendingProducts);
+            }
+
+            displayPendingProducts(products) {
+                const container = document.getElementById('pendingProducts');
+                const html = products.map(product => `
+                    <div class="product-card pending-approval">
+                        <h3>${product.name}</h3>
+                        <p>Category: ${product.category}</p>
+                        <p>Price: ₹${product.price}/kg</p>
+                        <p>Stock: ${product.stock}kg</p>
+                        <div class="product-action-buttons">
+                            <button class="approve-btn" onclick="adminDashboard.approveProduct('${product.id}')">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button class="reject-btn" onclick="adminDashboard.rejectProduct('${product.id}')">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                container.innerHTML = html || '<p>No pending products</p>';
+            }
+
+            approveProduct(productId) {
+                const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+                const productIndex = products.findIndex(p => p.id === productId);
+                
+                if (productIndex !== -1) {
+                    products[productIndex].isApproved = true;
+                    products[productIndex].approvalDate = new Date().toISOString();
+                    localStorage.setItem('farmerProducts', JSON.stringify(products));
+                    this.loadPendingProducts();
+                }
+            }
+
+            rejectProduct(productId) {
+                const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+                const filteredProducts = products.filter(p => p.id !== productId);
+                localStorage.setItem('farmerProducts', JSON.stringify(filteredProducts));
+                this.loadPendingProducts();
+            }
+        }
+
+        // Initialize admin dashboard
+        const adminDashboard = new AdminDashboard();
+    </script>
+</body>
+</html>
