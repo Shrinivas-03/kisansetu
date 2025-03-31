@@ -8,6 +8,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-[#FAF3E0] m-0 font-sans">
+    <script>
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('afterbegin', html);
+                document.body.style.paddingTop = '60px';
+            });
+    </script>
     <div class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <h1 class="text-white m-0">Kisansetu Farmer Dashboard</h1>
     </div>
@@ -372,6 +380,12 @@
             // Add review check interval
             setInterval(checkReviews, 30000); // Check every 30 seconds
         });
+
+        fetch('footer.html')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('beforeend', html);
+            });
     </script>
 </body>
 </html>

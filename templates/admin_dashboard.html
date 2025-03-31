@@ -8,12 +8,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-[#FAF3E0]">
-    <!-- Navbar -->
-    <nav class="bg-[#4CAF50] text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 py-3">
-            <h1 class="text-2xl font-bold">Kisansetu Admin Dashboard</h1>
-        </div>
-    </nav>
+    <script>
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('afterbegin', html);
+                document.body.style.paddingTop = '60px';
+            });
+    </script>
 
     <div class="max-w-7xl mx-auto px-4 pt-20 pb-8">
         <!-- Farmers Section -->
@@ -24,11 +26,47 @@
             </div>
         </div>
 
+        <!-- Stock Notifications Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Stock Notifications</h2>
+                <button onclick="adminDashboard.clearNotifications()" 
+                        class="bg-[#FF9800] text-white px-4 py-2 rounded-lg hover:bg-[#F57C00] transition-colors">
+                    Clear All
+                </button>
+            </div>
+            <div id="stockNotifications" class="space-y-4">
+                <!-- Notifications will be loaded here -->
+            </div>
+        </div>
+
         <!-- Products Section -->
-        <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 class="text-xl font-bold mb-6 text-gray-800">Pending Product Approvals</h2>
             <div id="pendingProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Products will be listed here -->
+            </div>
+        </div>
+
+        <!-- Approved Products Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-bold mb-6 text-gray-800">Approved Products</h2>
+            <div id="approvedProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Approved products will be listed here -->
+            </div>
+        </div>
+
+        <!-- Rejected Products Section -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Rejected Products</h2>
+                <button onclick="adminDashboard.clearRejectedProducts()" 
+                        class="bg-[#FF9800] text-white px-4 py-2 rounded-lg hover:bg-[#F57C00] transition-colors">
+                    Clear All
+                </button>
+            </div>
+            <div id="rejectedProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Rejected products will be listed here -->
             </div>
         </div>
     </div>
@@ -37,11 +75,26 @@
         class AdminDashboard {
             constructor() {
                 this.init();
+                this.cleanupProducts();
+            }
+
+            cleanupProducts() {
+                const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+                const filteredProducts = products.filter(p => 
+                    !(p.name.toLowerCase() === 'reddy' && 
+                      p.category === 'vegetables' && 
+                      p.price === 78 && 
+                      p.stock === 45)
+                );
+                localStorage.setItem('farmerProducts', JSON.stringify(filteredProducts));
             }
 
             init() {
                 this.loadFarmers();
                 this.loadPendingProducts();
+                this.loadApprovedProducts();
+                this.loadRejectedProducts();
+                this.loadNotifications();
                 this.startSync();
             }
 
@@ -49,6 +102,9 @@
                 setInterval(() => {
                     this.loadFarmers();
                     this.loadPendingProducts();
+                    this.loadApprovedProducts();
+                    this.loadRejectedProducts();
+                    this.loadNotifications();
                 }, 5000);
             }
 
@@ -148,13 +204,19 @@
 
             loadPendingProducts() {
                 const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+                // Only show products that are not approved yet
                 const pendingProducts = products.filter(p => !p.isApproved);
                 this.displayPendingProducts(pendingProducts);
             }
 
             displayPendingProducts(products) {
                 const container = document.getElementById('pendingProducts');
-                const html = products.map(product => `
+                if (products.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No pending products</p>';
+                    return;
+                }
+
+                container.innerHTML = products.map(product => `
                     <div class="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
                         <img src="${product.image}" alt="${product.name}" 
                              class="w-full h-48 object-cover rounded-lg mb-4">
@@ -173,10 +235,13 @@
                                     class="flex-1 bg-[#FF9800] hover:bg-[#F57C00] text-white px-4 py-2 rounded-lg transition-colors">
                                 <i class="fas fa-times mr-2"></i>Reject
                             </button>
+                            <button onclick="adminDashboard.removeProduct('${product.id}')"
+                                    class="w-10 bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     </div>
-                `).join('') || '<p class="text-gray-500 text-center py-4">No pending products</p>';
-                container.innerHTML = html;
+                `).join('');
             }
 
             approveProduct(productId) {
@@ -186,21 +251,198 @@
                 if (productIndex !== -1) {
                     products[productIndex].isApproved = true;
                     products[productIndex].approvalDate = new Date().toISOString();
+                    // Keep the product in the main list but mark as approved
                     localStorage.setItem('farmerProducts', JSON.stringify(products));
                     this.loadPendingProducts();
+                    this.loadApprovedProducts();
+                    this.showNotification('Product approved successfully');
                 }
             }
 
             rejectProduct(productId) {
                 const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
-                const filteredProducts = products.filter(p => p.id !== productId);
-                localStorage.setItem('farmerProducts', JSON.stringify(filteredProducts));
-                this.loadPendingProducts();
+                const productIndex = products.findIndex(p => p.id === productId);
+                
+                if (productIndex !== -1) {
+                    const rejectedProduct = {
+                        ...products[productIndex],
+                        rejectionDate: new Date().toISOString(),
+                        status: 'rejected'
+                    };
+
+                    // Remove from products and add to rejected list
+                    products.splice(productIndex, 1);
+                    localStorage.setItem('farmerProducts', JSON.stringify(products));
+
+                    // Save to rejected products
+                    const rejectedProducts = JSON.parse(localStorage.getItem('rejectedProducts') || '[]');
+                    rejectedProducts.push(rejectedProduct);
+                    localStorage.setItem('rejectedProducts', JSON.stringify(rejectedProducts));
+
+                    this.loadPendingProducts();
+                    this.loadRejectedProducts();
+                    this.showNotification('Product rejected');
+                }
+            }
+
+            removeProduct(productId) {
+                if (confirm('Are you sure you want to permanently remove this item?')) {
+                    const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+                    const updatedProducts = products.filter(p => p.id !== productId);
+                    localStorage.setItem('farmerProducts', JSON.stringify(updatedProducts));
+                    this.loadPendingProducts();
+                    this.loadApprovedProducts();
+                    this.showNotification('Item removed successfully');
+                }
+            }
+
+            loadApprovedProducts() {
+                const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+                const approvedProducts = products.filter(p => p.isApproved);
+                this.displayApprovedProducts(approvedProducts);
+            }
+
+            displayApprovedProducts(products) {
+                const container = document.getElementById('approvedProducts');
+                if (products.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 col-span-full text-center py-4">No approved products</p>';
+                    return;
+                }
+
+                container.innerHTML = products.map(product => `
+                    <div class="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                        <img src="${product.image}" alt="${product.name}" 
+                             class="w-full h-48 object-cover rounded-lg mb-4">
+                        <h3 class="font-semibold text-lg mb-2">${product.name}</h3>
+                        <div class="space-y-1 text-sm text-gray-600">
+                            <p>Category: ${product.category}</p>
+                            <p>Price: ₹${product.price}/kg</p>
+                            <p>Stock: ${product.stock}kg</p>
+                            <p>Farmer: ${product.farmerName || 'Unknown'}</p>
+                            <p>Approved on: ${new Date(product.approvalDate).toLocaleDateString()}</p>
+                            <div class="mt-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1"></i> Approved
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <button onclick="adminDashboard.revokeApproval('${product.id}')"
+                                    class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-undo mr-2"></i>Revoke Approval
+                            </button>
+                            <button onclick="adminDashboard.removeProduct('${product.id}')"
+                                    class="w-10 bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            revokeApproval(productId) {
+                if (confirm('Are you sure you want to revoke approval for this product?')) {
+                    const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+                    const productIndex = products.findIndex(p => p.id === productId);
+                    
+                    if (productIndex !== -1) {
+                        products[productIndex].isApproved = false;
+                        products[productIndex].approvalDate = null;
+                        localStorage.setItem('farmerProducts', JSON.stringify(products));
+                        
+                        this.loadApprovedProducts();
+                        this.loadPendingProducts();
+                        this.showNotification('Product approval revoked');
+                    }
+                }
+            }
+
+            loadRejectedProducts() {
+                const rejectedProducts = JSON.parse(localStorage.getItem('rejectedProducts') || '[]');
+                const container = document.getElementById('rejectedProducts');
+                
+                if (rejectedProducts.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 col-span-full text-center py-4">No rejected products</p>';
+                    return;
+                }
+
+                container.innerHTML = rejectedProducts.map(product => `
+                    <div class="border rounded-lg p-4 bg-gray-50 hover:shadow-md transition-shadow">
+                        <img src="${product.image}" alt="${product.name}" 
+                             class="w-full h-48 object-cover rounded-lg mb-4">
+                        <h3 class="font-semibold text-lg mb-2">${product.name}</h3>
+                        <div class="space-y-1 text-sm text-gray-600">
+                            <p>Category: ${product.category}</p>
+                            <p>Price: ₹${product.price}/kg</p>
+                            <p>Rejected on: ${new Date(product.rejectionDate).toLocaleDateString()}</p>
+                            <p>Farmer: ${product.farmerName || 'Unknown'}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            clearRejectedProducts() {
+                if (confirm('Are you sure you want to clear all rejected products?')) {
+                    localStorage.removeItem('rejectedProducts');
+                    this.loadRejectedProducts();
+                    this.showNotification('Rejected products cleared');
+                }
+            }
+
+            loadNotifications() {
+                const notifications = JSON.parse(localStorage.getItem('adminNotifications') || '[]');
+                const container = document.getElementById('stockNotifications');
+                
+                if (notifications.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No notifications</p>';
+                    return;
+                }
+
+                container.innerHTML = notifications
+                    .filter(n => n.type === 'stock')
+                    .map(notification => `
+                        <div class="border rounded-lg p-4 bg-red-50">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="font-semibold text-red-600">Out of Stock Alert</span>
+                                    <p class="mt-1">${notification.productName} by ${notification.farmerName}</p>
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        Reported on ${new Date(notification.date).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <button onclick="adminDashboard.contactFarmer('${notification.farmerId}')"
+                                        class="bg-[#4CAF50] text-white px-4 py-2 rounded hover:bg-[#388E3C] transition-colors">
+                                    Contact Farmer
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+
+            contactFarmer(farmerId) {
+                const farmers = JSON.parse(localStorage.getItem('farmers') || '[]');
+                const farmer = farmers.find(f => f.id === farmerId);
+                if (farmer) {
+                    alert(`Contact ${farmer.name} at ${farmer.phone}`);
+                }
+            }
+
+            clearNotifications() {
+                if (confirm('Are you sure you want to clear all notifications?')) {
+                    localStorage.removeItem('adminNotifications');
+                    this.loadNotifications();
+                }
             }
         }
 
         // Initialize admin dashboard
         const adminDashboard = new AdminDashboard();
+        
+        fetch('footer.html')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('beforeend', html);
+            });
     </script>
 </body>
 </html>

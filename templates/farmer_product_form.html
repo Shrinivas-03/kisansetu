@@ -8,6 +8,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+    <script>
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('afterbegin', html);
+                document.body.style.paddingTop = '60px';
+            });
+    </script>
     <div class="max-w-3xl mx-auto p-5">
         <div class="bg-white rounded-xl shadow-lg p-8 relative overflow-hidden mt-10">
             <!-- Gradient Top Border -->

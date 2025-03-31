@@ -8,15 +8,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50">
-    <!-- Navbar -->
-    <nav class="bg-green-600 text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <h1 class="text-xl md:text-2xl font-bold">KisanSetu</h1>
-            <a href="customer_dashboard.html" class="text-white hover:text-gray-200 transition-colors">
-                <i class="fas fa-home mr-2"></i>Home
-            </a>
-        </div>
-    </nav>
+    <script>
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('afterbegin', html);
+                document.body.style.paddingTop = '60px';
+            });
+    </script>
 
     <!-- Hero Section -->
     <div class="pt-20 bg-gradient-to-b from-green-600 to-green-500 text-white">

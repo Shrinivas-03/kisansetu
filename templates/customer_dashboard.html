@@ -8,6 +8,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-[#FAF3E0] m-0 font-sans">
+    <script>
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('afterbegin', html);
+                document.body.style.paddingTop = '60px';
+            });
+    </script>
     <div class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <div class="flex justify-between items-center max-w-7xl mx-auto">
             <h1 class="text-white m-0">Kisansetu Customer Dashboard</h1>
@@ -225,10 +233,21 @@
             }
 
             syncProducts() {
-                // Get only admin approved products
-                const allProducts = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
-                const approvedProducts = allProducts.filter(product => product.isApproved);
-                this.updateWishlistDisplay(approvedProducts);
+                try {
+                    const allProducts = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
+                    // Only show approved products
+                    const approvedProducts = allProducts.filter(product => product.isApproved === true);
+                    
+                    if (approvedProducts.length === 0) {
+                        const wishlistGrid = document.getElementById('wishlistGrid');
+                        wishlistGrid.innerHTML = '<p class="text-center text-gray-500 py-4">No products available at the moment.</p>';
+                        return;
+                    }
+                    
+                    this.updateWishlistDisplay(approvedProducts);
+                } catch (error) {
+                    console.error('Error syncing products:', error);
+                }
             }
 
             updateWishlistDisplay(products) {
@@ -270,9 +289,18 @@
                                     onclick="toggleWishlist('${product.id}')">
                                 <i class="fa${customerWishlist.includes(product.id) ? 's' : 'r'} fa-heart"></i>
                             </button>
+                            <button onclick="toggleFarmerDetails('${product.id}')"
+                                    class="w-full mt-2 px-4 py-2 bg-[#FBC02D] text-white rounded hover:bg-[#F9A825] transition-colors">
+                                <i class="fas fa-user-circle mr-1"></i> View Farmer Details
+                            </button>
+                            <div id="farmerDetails-${product.id}" class="hidden mt-3 p-3 bg-gray-50 rounded-lg border text-sm">
+                                <h4 class="font-semibold mb-1">Farmer: ${product.farmerName}</h4>
+                                <p class="text-gray-600"><i class="fas fa-map-marker-alt text-red-500 mr-1"></i> ${product.location || 'Location not available'}</p>
+                                ${product.description ? `<p class="mt-2 text-gray-700">${product.description}</p>` : ''}
+                            </div>
                         </div>
                     `).join('') : 
-                    '<p>No approved products available in selected categories</p>';
+                    '<p class="text-gray-500 text-center py-4">No products available in selected category</p>';
 
                 wishlistGrid.innerHTML = wishlistHTML;
             }
@@ -565,6 +593,15 @@
                         this.style.opacity = '1';
                     });
                 });
+
+                // Initialize customer manager and load products
+                window.customerProductManager = new CustomerProductManager();
+                window.customerProductManager.syncProducts();
+
+                // Add periodic refresh
+                setInterval(() => {
+                    window.customerProductManager.syncProducts();
+                }, 5000);
             } catch (error) {
                 console.error('Initialization error:', error);
             }
@@ -598,6 +635,18 @@
                 document.getElementById('mobileMenu').classList.add('hidden');
             }
         });
+
+        function toggleFarmerDetails(productId) {
+            const detailsDiv = document.getElementById(`farmerDetails-${productId}`);
+            detailsDiv.classList.toggle('hidden');
+        }
+    </script>
+    <script>
+        fetch('footer.html')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('beforeend', html);
+            });
     </script>
 </body>
 </html>
