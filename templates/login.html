@@ -9,8 +9,80 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-5">
     <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <!-- Authentication Type Selector -->
+        <div class="flex gap-4 mb-8">
+            <button onclick="switchAuthType('signin')" 
+                    id="signinBtn"
+                    class="flex-1 py-3 rounded-lg font-semibold transition-colors">
+                Sign In
+            </button>
+            <button onclick="switchAuthType('signup')" 
+                    id="signupBtn"
+                    class="flex-1 py-3 rounded-lg font-semibold transition-colors">
+                Sign Up
+            </button>
+        </div>
+
+        <!-- User Type Selector -->
+        <div class="flex gap-4 mb-8">
+            <button onclick="switchUserType('customer')" 
+                    id="customerBtn"
+                    class="flex-1 py-2 rounded transition-colors">
+                Customer
+            </button>
+            <button onclick="switchUserType('farmer')" 
+                    id="farmerBtn"
+                    class="flex-1 py-2 rounded transition-colors">
+                Farmer
+            </button>
+        </div>
+
+        <!-- Customer Login Form -->
+        <div id="customerLoginForm">
+            <h2 class="text-2xl text-blue-600 text-center mb-8">Customer Login</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block font-bold mb-2">Full Name</label>
+                    <input type="text" id="customerName" required
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Email</label>
+                    <input type="email" id="customerEmail" required
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Phone Number</label>
+                    <input type="tel" id="customerPhone" pattern="[0-9]{10}" required
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <button class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" 
+                        onclick="customerLogin()">Get OTP</button>
+                <div class="text-center text-blue-600 mt-4 cursor-pointer" 
+                     onclick="toggleForm()">Register as Farmer</div>
+            </div>
+            <div class="mt-8 border-t pt-6">
+                <div class="flex flex-col space-y-4">
+                    <button class="flex items-center justify-center gap-2 bg-white border-2 border-gray-300 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                        <img src="https://www.google.com/favicon.ico" class="w-5 h-5" alt="Google">
+                        Sign in with Google
+                    </button>
+                    <button class="flex items-center justify-center gap-2 bg-[#1877f2] text-white py-2 rounded-lg hover:bg-[#166fe5] transition-colors">
+                        <i class="fab fa-facebook"></i>
+                        Sign in with Facebook
+                    </button>
+                    <div class="text-center text-sm text-gray-600">
+                        Don't have an account? 
+                        <button onclick="switchAuthType('signup')" class="text-blue-600 font-medium hover:underline">
+                            Sign up
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Login Form -->
-        <div id="loginForm">
+        <div id="loginForm" class="hidden">
             <h2 class="text-2xl text-blue-600 text-center mb-8">Login to Kisansetu</h2>
             <div class="space-y-4">
                 <div>
@@ -25,6 +97,24 @@
                 </div>
                 <button class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="login()">Login</button>
                 <div class="text-center text-blue-600 mt-4 cursor-pointer" onclick="toggleForm()">Register as Farmer</div>
+            </div>
+            <div class="mt-8 border-t pt-6">
+                <div class="flex flex-col space-y-4">
+                    <button class="flex items-center justify-center gap-2 bg-white border-2 border-gray-300 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                        <img src="https://www.google.com/favicon.ico" class="w-5 h-5" alt="Google">
+                        Sign in with Google
+                    </button>
+                    <button class="flex items-center justify-center gap-2 bg-[#1877f2] text-white py-2 rounded-lg hover:bg-[#166fe5] transition-colors">
+                        <i class="fab fa-facebook"></i>
+                        Sign in with Facebook
+                    </button>
+                    <div class="text-center text-sm text-gray-600">
+                        New farmer? 
+                        <button onclick="toggleForm()" class="text-blue-600 font-medium hover:underline">
+                            Create account
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -69,6 +159,14 @@
                 <button class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="registerFarmer()">Register</button>
                 <div class="text-center text-blue-600 mt-4 cursor-pointer" onclick="toggleForm()">Back to Login</div>
             </div>
+            <div class="mt-8 border-t pt-6">
+                <div class="text-center text-sm text-gray-600">
+                    Already have an account? 
+                    <button onclick="toggleForm()" class="text-blue-600 font-medium hover:underline">
+                        Sign in
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- OTP Verification Form -->
@@ -96,6 +194,34 @@
             <button class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="verifyOTP()">Verify OTP</button>
             <div class="text-center text-blue-600 mt-4 cursor-pointer" onclick="resendOTP()">Resend OTP</div>
         </div>
+
+        <!-- Customer OTP Verification -->
+        <div id="customerOtpVerification" class="hidden">
+            <h3 class="text-xl text-blue-600 text-center mb-4">Verify Your Phone Number</h3>
+            <p class="text-center text-gray-600 mb-4">
+                We've sent a verification code to
+                <br>
+                <span id="customerMaskedPhone" class="font-bold"></span>
+            </p>
+            <div class="flex justify-center gap-2 mb-4">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+            <button class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" 
+                    onclick="verifyCustomerOTP()">Verify OTP</button>
+            <div class="text-center text-blue-600 mt-4 cursor-pointer" 
+                 onclick="resendCustomerOTP()">Resend OTP</div>
+        </div>
     </div>
 
     <script>
@@ -103,6 +229,8 @@
             document.getElementById('loginForm').classList.toggle('hidden');
             document.getElementById('registerForm').classList.toggle('hidden');
             document.getElementById('otpVerification').style.display = 'none';
+            document.getElementById('customerLoginForm').classList.add('hidden');
+            document.getElementById('customerOtpVerification').classList.add('hidden');
             
             // Clear all inputs
             document.querySelectorAll('input').forEach(input => input.value = '');
@@ -112,6 +240,8 @@
 
         let generatedOTP = '';
         let pendingRegistration = null;
+        let customerOTP = '';
+        let pendingCustomer = null;
 
         function registerFarmer() {
             const name = document.getElementById('farmerName').value;
@@ -246,6 +376,118 @@
             } else {
                 alert('Invalid email or password');
             }
+        }
+
+        function switchAuthType(type) {
+            const signinBtn = document.getElementById('signinBtn');
+            const signupBtn = document.getElementById('signupBtn');
+            const customerLoginForm = document.getElementById('customerLoginForm');
+            const farmerLoginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const otpVerification = document.getElementById('otpVerification');
+            const customerOtpVerification = document.getElementById('customerOtpVerification');
+
+            // Reset all forms to hidden
+            [customerLoginForm, farmerLoginForm, registerForm, otpVerification, customerOtpVerification]
+                .forEach(form => form.classList.add('hidden'));
+
+            // Update button styles
+            signinBtn.classList.toggle('bg-blue-600', type === 'signin');
+            signinBtn.classList.toggle('text-white', type === 'signin');
+            signupBtn.classList.toggle('bg-blue-600', type === 'signup');
+            signupBtn.classList.toggle('text-white', type === 'signup');
+
+            // Show appropriate form based on current user type and auth type
+            const currentUserType = document.getElementById('customerBtn').classList.contains('bg-blue-600') 
+                ? 'customer' : 'farmer';
+
+            if (type === 'signin') {
+                if (currentUserType === 'customer') {
+                    customerLoginForm.classList.remove('hidden');
+                } else {
+                    farmerLoginForm.classList.remove('hidden');
+                }
+            } else {
+                if (currentUserType === 'customer') {
+                    customerLoginForm.classList.remove('hidden');
+                } else {
+                    registerForm.classList.remove('hidden');
+                }
+            }
+        }
+
+        function switchUserType(type) {
+            const customerBtn = document.getElementById('customerBtn');
+            const farmerBtn = document.getElementById('farmerBtn');
+
+            customerBtn.classList.toggle('bg-blue-600', type === 'customer');
+            customerBtn.classList.toggle('text-white', type === 'customer');
+            farmerBtn.classList.toggle('bg-blue-600', type === 'farmer');
+            farmerBtn.classList.toggle('text-white', type === 'farmer');
+
+            // Re-trigger auth type to show correct form
+            const currentAuthType = document.getElementById('signinBtn').classList.contains('bg-blue-600')
+                ? 'signin' : 'signup';
+            switchAuthType(currentAuthType);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            switchAuthType('signin');
+            switchUserType('customer');
+        });
+
+        function customerLogin() {
+            const name = document.getElementById('customerName').value;
+            const email = document.getElementById('customerEmail').value;
+            const phone = document.getElementById('customerPhone').value;
+
+            if (!name || !email || !phone) {
+                alert('Please fill all required fields');
+                return;
+            }
+
+            // Generate OTP
+            customerOTP = generateOTP();
+            pendingCustomer = { name, email, phone };
+
+            // Show masked phone number
+            const maskedPhone = phone.slice(0, 2) + "•".repeat(6) + phone.slice(-2);
+            document.getElementById('customerMaskedPhone').textContent = maskedPhone;
+
+            // Show OTP verification
+            document.getElementById('customerLoginForm').classList.add('hidden');
+            document.getElementById('customerOtpVerification').classList.remove('hidden');
+
+            console.log('Customer OTP:', customerOTP);
+            showNotification('OTP sent to your phone number');
+        }
+
+        function verifyCustomerOTP() {
+            const enteredOTP = Array.from(document.querySelectorAll('#customerOtpVerification input'))
+                                  .map(input => input.value)
+                                  .join('');
+
+            if (enteredOTP === customerOTP) {
+                // Save customer session
+                const customer = {
+                    id: Date.now().toString(),
+                    ...pendingCustomer,
+                    loginDate: new Date().toISOString()
+                };
+                localStorage.setItem('currentCustomer', JSON.stringify(customer));
+
+                // Redirect to customer dashboard
+                window.location.href = 'customer_dashboard.html';
+            } else {
+                showNotification('Invalid OTP. Please try again.', 'error');
+            }
+        }
+
+        function resendCustomerOTP() {
+            customerOTP = generateOTP();
+            console.log('New Customer OTP:', customerOTP);
+            showNotification('New OTP sent to your phone number');
         }
     </script>
 </body>
