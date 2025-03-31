@@ -12,28 +12,49 @@
         <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
             <h2 class="text-2xl text-blue-600 text-center mb-8">Welcome to KisanSetu</h2>
             <div class="space-y-4">
-                <div>
-                    <label class="block font-bold mb-2">Full Name</label>
-                    <input type="text" id="customerName" required
-                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block font-bold mb-2">Phone Number</label>
-                    <input type="tel" id="customerPhone" pattern="[0-9]{10}" required
-                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                </div>
-                <button class="w-full py-2 bg-[#4CAF50] text-white rounded hover:bg-[#388E3C] transition-colors" 
-                        onclick="customerLogin()">Sign In</button>
+                <form method="POST" action="{{ url_for('login') }}">
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            <div class="mb-6 p-4 rounded
+                                {% if 'pending admin approval' in messages[0] %}
+                                    bg-yellow-100 text-yellow-700
+                                {% elif 'verified' in messages[0] %}
+                                    bg-green-100 text-green-700
+                                {% else %}
+                                    bg-red-100 text-red-700
+                                {% endif %}">
+                                {{ messages[0] }}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    <div>
+                        <label class="block font-bold mb-2">Email</label>
+                        <input type="email" id="customerEmail" name="email" required
+                               class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-2">Password</label>
+                        <input type="password" id="customerPassword" name="password" required
+                               class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" 
+                            class="w-full py-2 bg-[#4CAF50] text-white rounded hover:bg-[#388E3C] transition-colors">
+                        Sign In
+                    </button>
+                </form>
+                <p class="mt-4 text-center text-sm text-gray-600">
+                    Don't have an account? <a href="/signup" class="text-blue-600 hover:underline">Sign Up</a>
+                </p>
             </div>
         </div>
     </div>
 
     <script>
         function customerLogin() {
-            const name = document.getElementById('customerName').value;
-            const phone = document.getElementById('customerPhone').value;
+            const email = document.getElementById('customerEmail').value;
+            const password = document.getElementById('customerPassword').value;
 
-            if (!name || !phone) {
+            if (!email || !password) {
                 alert('Please fill all required fields');
                 return;
             }
@@ -41,8 +62,7 @@
             // Save customer session
             const customer = {
                 id: Date.now().toString(),
-                name,
-                phone,
+                email,
                 loginDate: new Date().toISOString()
             };
             localStorage.setItem('currentCustomer', JSON.stringify(customer));

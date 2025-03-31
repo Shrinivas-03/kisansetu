@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - KisanSetu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-[#FAF3E0] min-h-screen">
+    <!-- Custom Navbar -->
+    <nav class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
+        <div class="flex justify-between items-center max-w-7xl mx-auto">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl font-bold text-white">KisanSetu</h1>
+                <a href="/customer/dashboard" class="text-white hover:text-gray-200">Home</a>
+                <a href="/about" class="text-white hover:text-gray-200">About</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 pt-20">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Profile Information Card -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="text-center">
+                        <div class="relative inline-block">
+                            <img src="{{ session.get('user_profile_pic') or 'https://ui-avatars.com/api/?name=' + session.get('user_name', '') + '&background=random&size=150' }}" 
+                                 alt="Profile" 
+                                 id="profileImage"
+                                 class="rounded-full w-32 h-32 mx-auto mb-4 object-cover">
+                            <label for="profilePicture" class="absolute bottom-0 right-0 bg-[#4CAF50] text-white p-2 rounded-full cursor-pointer hover:bg-[#388E3C]">
+                                <i class="fas fa-camera"></i>
+                                <input type="file" id="profilePicture" class="hidden" accept="image/*" onchange="updateProfilePicture(event)">
+                            </label>
+                        </div>
+                        
+                        <!-- Add edit button for name -->
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <input type="text" 
+                                   id="userName" 
+                                   value="{{ session.get('user_name', '') }}"
+                                   class="text-2xl font-bold text-center border-b-2 border-transparent focus:border-green-500 focus:outline-none"
+                                   readonly>
+                            <button onclick="toggleEdit('userName')" class="text-gray-500 hover:text-green-500">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4 mt-6">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-envelope text-gray-500 w-6"></i>
+                            <div>
+                                <p class="text-sm text-gray-500">Email</p>
+                                <p class="font-medium">{{ session.get('user_email', '') }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-phone text-gray-500 w-6"></i>
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-500">Phone</p>
+                                <div class="flex items-center gap-2">
+                                    <input type="tel" 
+                                           id="userPhone" 
+                                           value="{{ session.get('user_phone', '') }}"
+                                           pattern="[0-9]{10}"
+                                           class="font-medium border-b-2 border-transparent focus:border-green-500 focus:outline-none"
+                                           readonly>
+                                    <button onclick="toggleEdit('userPhone')" class="text-gray-500 hover:text-green-500">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="saveChanges" 
+                                onclick="saveChanges()" 
+                                class="w-full mt-4 bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors hidden">
+                            Save Changes
+                        </button>
+                        <button onclick="logout()" class="w-full mt-6 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Orders Card -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-6">Recent Orders</h2>
+                    <div id="recentOrders" class="space-y-4">
+                        <!-- Recent orders will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ProfileManager {
+            constructor() {
+                this.loadRecentOrders();
+            }
+
+            async loadRecentOrders() {
+                try {
+                    const response = await fetch('/get_user_orders?limit=5', {
+                        credentials: 'include'
+                    });
+                    const orders = await response.json();
+                    this.displayRecentOrders(orders);
+                } catch (error) {
+                    console.error('Error loading orders:', error);
+                    this.showError('Failed to load recent orders');
+                }
+            }
+
+            displayRecentOrders(orders) {
+                const container = document.getElementById('recentOrders');
+                if (!orders || orders.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No orders yet</p>';
+                    return;
+                }
+
+                container.innerHTML = orders.slice(0, 5).map(order => `
+                    <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-medium">Order #${order.id}</p>
+                                <p class="text-sm text-gray-500">${new Date(order.order_date).toLocaleDateString()}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">₹${order.total_amount}</p>
+                                <span class="inline-block px-2 py-1 text-xs rounded-full ${this.getStatusColor(order.status)}">
+                                    ${order.status}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-600">
+                                ${order.items.length} item${order.items.length !== 1 ? 's' : ''}
+                            </p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            getStatusColor(status) {
+                const colors = {
+                    'Pending': 'bg-yellow-100 text-yellow-800',
+                    'Confirmed': 'bg-blue-100 text-blue-800',
+                    'Delivered': 'bg-green-100 text-green-800',
+                    'Cancelled': 'bg-red-100 text-red-800'
+                };
+                return colors[status] || 'bg-gray-100 text-gray-800';
+            }
+
+            showError(message) {
+                const notification = document.createElement('div');
+                notification.textContent = message;
+                notification.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+            }
+        }
+
+        // Initialize profile manager
+        const profile = new ProfileManager();
+
+        async function updateProfilePicture(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            if (!validTypes.includes(file.type)) {
+                showNotification('Please upload a valid image file (JPEG, PNG, or GIF)', 'error');
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('Image size should be less than 5MB', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('profile_pic', file);
+
+            try {
+                // Show loading state
+                const profileImg = document.getElementById('profileImage');
+                profileImg.style.opacity = '0.5';
+                
+                const response = await fetch('/update_profile_picture', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update image with new URL
+                    profileImg.src = result.profile_pic_url;
+                    showNotification('Profile picture updated successfully', 'success');
+                } else {
+                    throw new Error(result.error || 'Failed to update profile picture');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message || 'Failed to update profile picture', 'error');
+            } finally {
+                // Reset loading state
+                document.getElementById('profileImage').style.opacity = '1';
+            }
+        }
+
+        function toggleEdit(fieldId) {
+            const field = document.getElementById(fieldId);
+            field.readOnly = !field.readOnly;
+            field.focus();
+            document.getElementById('saveChanges').classList.remove('hidden');
+            
+            if (!field.readOnly) {
+                field.classList.add('border-green-500');
+            } else {
+                field.classList.remove('border-green-500');
+            }
+        }
+
+        async function saveChanges() {
+            const name = document.getElementById('userName').value;
+            const phone = document.getElementById('userPhone').value;
+            
+            try {
+                const response = await fetch('/update_profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        phone: phone
+                    })
+                });
+                
+                if (response.ok) {
+                    showNotification('Profile updated successfully', 'success');
+                    document.getElementById('saveChanges').classList.add('hidden');
+                    // Make fields readonly again
+                    document.getElementById('userName').readOnly = true;
+                    document.getElementById('userPhone').readOnly = true;
+                } else {
+                    throw new Error('Failed to update profile');
+                }
+            } catch (error) {
+                showNotification('Failed to update profile', 'error');
+            }
+        }
+
+        function logout() {
+            fetch('/logout')
+                .then(() => {
+                    window.location.href = '/login';
+                })
+                .catch(error => {
+                    console.error('Error logging out:', error);
+                });
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.className = `fixed bottom-4 right-4 p-4 rounded-lg ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            } text-white`;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kisansetu - Admin Dashboard</title>
+    <title>KisanSetu - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-[#FAF3E0]">
+<body class="bg-gray-100 min-h-screen">
+    <!-- Load Navbar -->
     <script>
-        fetch('navbar.html')
+        fetch('/navbar')
             .then(response => response.text())
             .then(html => {
                 document.body.insertAdjacentHTML('afterbegin', html);
@@ -17,59 +18,90 @@
             });
     </script>
 
-    <div class="max-w-7xl mx-auto px-4 pt-20 pb-8">
-        <!-- Farmers Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 class="text-xl font-bold mb-6 text-gray-800">Registered Farmers</h2>
-            <div id="farmersList" class="space-y-4">
-                <!-- Farmers will be listed here -->
-            </div>
-        </div>
-
-        <!-- Stock Notifications Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-gray-800">Stock Notifications</h2>
-                <button onclick="adminDashboard.clearNotifications()" 
-                        class="bg-[#FF9800] text-white px-4 py-2 rounded-lg hover:bg-[#F57C00] transition-colors">
-                    Clear All
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Admin Header with Username and Logout -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+            <div class="flex items-center gap-4">
+                <span class="text-gray-600">Welcome, {{ session.get('admin_name', '') }}</span>
+                <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
                 </button>
             </div>
-            <div id="stockNotifications" class="space-y-4">
-                <!-- Notifications will be loaded here -->
-            </div>
         </div>
-
-        <!-- Products Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 class="text-xl font-bold mb-6 text-gray-800">Pending Product Approvals</h2>
-            <div id="pendingProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Products will be listed here -->
+        <!-- Rest of the dashboard content -->
+        <div class="max-w-7xl mx-auto px-4 pt-20 pb-8">
+            <!-- Farmers Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-bold mb-6 text-gray-800">Registered Farmers</h2>
+                <div id="farmersList" class="space-y-4">
+                    <!-- Farmers will be listed here -->
+                </div>
             </div>
-        </div>
 
-        <!-- Approved Products Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 class="text-xl font-bold mb-6 text-gray-800">Approved Products</h2>
-            <div id="approvedProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Approved products will be listed here -->
+            <!-- Add this before the Products Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-bold mb-6 text-gray-800">All Registered Farmers</h2>
+                <div id="registeredFarmersList" class="space-y-4">
+                    <!-- Registered farmers will be listed here -->
+                </div>
             </div>
-        </div>
 
-        <!-- Rejected Products Section -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-gray-800">Rejected Products</h2>
-                <button onclick="adminDashboard.clearRejectedProducts()" 
-                        class="bg-[#FF9800] text-white px-4 py-2 rounded-lg hover:bg-[#F57C00] transition-colors">
-                    Clear All
-                </button>
+            <!-- Stock Notifications Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Stock Notifications</h2>
+                    <button onclick="adminDashboard.clearNotifications()" 
+                            class="bg-[#FF9800] text-white px-4 py-2 rounded-lg hover:bg-[#F57C00] transition-colors">
+                        Clear All
+                    </button>
+                </div>
+                <div id="stockNotifications" class="space-y-4">
+                    <!-- Notifications will be loaded here -->
+                </div>
             </div>
-            <div id="rejectedProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Rejected products will be listed here -->
+
+            <!-- Products Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-bold mb-6 text-gray-800">Pending Product Approvals</h2>
+                <div id="pendingProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Products will be listed here -->
+                </div>
+            </div>
+
+            <!-- Approved Products Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-bold mb-6 text-gray-800">Approved Products</h2>
+                <div id="approvedProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Approved products will be listed here -->
+                </div>
+            </div>
+
+            <!-- Rejected Products Section -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Rejected Products</h2>
+                    <button onclick="adminDashboard.clearRejectedProducts()" 
+                            class="bg-[#FF9800] text-white px-4 py-2 rounded-lg hover:bg-[#F57C00] transition-colors">
+                        Clear All
+                    </button>
+                </div>
+                <div id="rejectedProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Rejected products will be listed here -->
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Load Footer -->
+    <script>
+        fetch('/footer')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('beforeend', html);
+            });
+    </script>
 
     <script>
         class AdminDashboard {
@@ -109,59 +141,96 @@
             }
 
             loadFarmers() {
-                const farmers = JSON.parse(localStorage.getItem('farmers') || '[]');
-                this.displayFarmers(farmers);
+                // Update existing loadFarmers method
+                Promise.all([
+                    fetch('/get_pending_farmers').then(res => res.json()),
+                    fetch('/get_registered_farmers').then(res => res.json())
+                ])
+                .then(([pendingFarmers, registeredFarmers]) => {
+                    this.displayPendingFarmers(pendingFarmers);
+                    this.displayRegisteredFarmers(registeredFarmers);
+                })
+                .catch(error => {
+                    console.error('Error loading farmers:', error);
+                });
             }
 
-            displayFarmers(farmers) {
-                const container = document.getElementById('farmersList');
-                const html = farmers.map(farmer => `
+            displayRegisteredFarmers(farmers) {
+                const container = document.getElementById('registeredFarmersList');
+                if (!farmers || farmers.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center">No registered farmers</p>';
+                    return;
+                }
+
+                container.innerHTML = farmers.map(farmer => `
                     <div class="border rounded-lg p-6 hover:shadow-md transition-shadow">
-                        <div class="flex items-start gap-6">
-                            <div class="text-4xl text-gray-400">
-                                <i class="fas fa-user-circle"></i>
-                            </div>
+                        <div class="flex items-start justify-between gap-4">
                             <div class="flex-1">
                                 <h3 class="text-lg font-semibold text-gray-800">${farmer.name}</h3>
                                 <div class="space-y-2 mt-2 text-gray-600">
-                                    <p class="flex items-center gap-2">
-                                        <i class="fas fa-phone text-blue-500"></i>
-                                        ${farmer.phone}
-                                    </p>
-                                    <p class="flex items-center gap-2">
-                                        <i class="fas fa-map-marker-alt text-red-500"></i>
-                                        ${farmer.location}
-                                    </p>
-                                    <p class="flex items-center gap-2">
-                                        <i class="fas fa-seedling text-green-500"></i>
-                                        ${farmer.categories.join(', ')}
-                                    </p>
+                                    <p><i class="fas fa-envelope mr-2"></i>${farmer.email}</p>
+                                    <p><i class="fas fa-phone mr-2"></i>${farmer.phone}</p>
+                                    <p><i class="fas fa-calendar mr-2"></i>Joined: ${new Date(farmer.created_at).toLocaleDateString()}</p>
                                 </div>
-                                <div class="mt-3">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm
-                                        ${farmer.isVerified ? 
-                                        'bg-green-100 text-green-700' : 
-                                        'bg-yellow-100 text-yellow-700'}">
-                                        ${farmer.isVerified ? 'Active' : 'Pending Verification'}
-                                    </span>
+                                <div class="mt-3 flex gap-2">
+                                    ${farmer.is_verified ? 
+                                        '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm"><i class="fas fa-check-circle mr-1"></i>Email Verified</span>' : 
+                                        '<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm"><i class="fas fa-clock mr-1"></i>Not Verified</span>'}
+                                    ${farmer.is_approved ? 
+                                        '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"><i class="fas fa-user-check mr-1"></i>Approved</span>' : 
+                                        '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm"><i class="fas fa-user-clock mr-1"></i>Not Approved</span>'}
                                 </div>
                             </div>
                             <div class="flex gap-2">
-                                ${!farmer.isVerified ? `
-                                    <button onclick="adminDashboard.verifyFarmer('${farmer.id}')"
-                                            class="bg-[#4CAF50] hover:bg-[#388E3C] text-white px-4 py-2 rounded-lg transition-colors">
-                                        <i class="fas fa-check mr-2"></i>Verify
+                                ${!farmer.is_approved ? 
+                                    `<button onclick="adminDashboard.approveFarmer(${farmer.id})"
+                                            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                        <i class="fas fa-check mr-2"></i>Approve
+                                    </button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            displayPendingFarmers(farmers) {
+                const container = document.getElementById('farmersList');
+                if (!farmers || farmers.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center">No pending farmer registrations</p>';
+                    return;
+                }
+
+                container.innerHTML = farmers.map(farmer => `
+                    <div class="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-800">${farmer.name}</h3>
+                                <div class="space-y-2 mt-2 text-gray-600">
+                                    <p><i class="fas fa-envelope mr-2"></i>${farmer.email}</p>
+                                    <p><i class="fas fa-phone mr-2"></i>${farmer.phone}</p>
+                                    <p><i class="fas fa-clock mr-2"></i>Registered: ${new Date(farmer.created_at).toLocaleDateString()}</p>
+                                </div>
+                                <div class="mt-3">
+                                    ${farmer.is_verified ? 
+                                        '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm"><i class="fas fa-check-circle mr-1"></i>Email Verified</span>' : 
+                                        '<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm"><i class="fas fa-clock mr-1"></i>Pending Verification</span>'}
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                ${!farmer.is_approved ? `
+                                    <button onclick="adminDashboard.approveFarmer(${farmer.id})"
+                                            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                        <i class="fas fa-check mr-2"></i>Approve
                                     </button>
                                 ` : ''}
-                                <button onclick="adminDashboard.removeFarmer('${farmer.id}')"
-                                        class="bg-[#FF9800] hover:bg-[#F57C00] text-white px-4 py-2 rounded-lg transition-colors">
+                                <button onclick="adminDashboard.removeFarmer(${farmer.id})"
+                                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
-                `).join('') || '<p class="text-gray-500 text-center py-4">No farmers registered yet</p>';
-                container.innerHTML = html;
+                `).join('');
             }
 
             verifyFarmer(farmerId) {
@@ -174,6 +243,27 @@
                     localStorage.setItem('farmers', JSON.stringify(farmers));
                     this.loadFarmers();
                     this.showNotification('Farmer verified successfully');
+                }
+            }
+
+            approveFarmer(farmerId) {
+                if (confirm('Are you sure you want to approve this farmer?')) {
+                    fetch(`/approve_farmer/${farmerId}`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            this.showNotification('Error: ' + data.error);
+                        } else {
+                            this.loadFarmers();
+                            this.showNotification('Farmer approved successfully');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        this.showNotification('Error approving farmer');
+                    });
                 }
             }
 
@@ -203,10 +293,17 @@
             }
 
             loadPendingProducts() {
-                const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
-                // Only show products that are not approved yet
-                const pendingProducts = products.filter(p => !p.isApproved);
-                this.displayPendingProducts(pendingProducts);
+                fetch('/get_pending_products')
+                    .then(response => response.json())
+                    .then(products => {
+                        console.log('Pending products:', products); // Debug log
+                        this.displayPendingProducts(products);
+                    })
+                    .catch(error => {
+                        console.error('Error loading pending products:', error);
+                        const container = document.getElementById('pendingProducts');
+                        container.innerHTML = '<p class="text-red-500 text-center">Error loading pending products</p>';
+                    });
             }
 
             displayPendingProducts(products) {
@@ -218,8 +315,10 @@
 
                 container.innerHTML = products.map(product => `
                     <div class="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
-                        <img src="${product.image}" alt="${product.name}" 
-                             class="w-full h-48 object-cover rounded-lg mb-4">
+                        <img src="${product.image_url || 'https://via.placeholder.com/200x200?text=' + encodeURIComponent(product.name)}" 
+                             alt="${product.name}" 
+                             class="w-full h-48 object-cover rounded-lg mb-4"
+                             onerror="this.src='https://via.placeholder.com/200x200?text=${encodeURIComponent(product.name)}'">
                         <h3 class="font-semibold text-lg mb-2">${product.name}</h3>
                         <div class="space-y-1 text-sm text-gray-600">
                             <p>Category: ${product.category}</p>
@@ -245,61 +344,67 @@
             }
 
             approveProduct(productId) {
-                const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
-                const productIndex = products.findIndex(p => p.id === productId);
-                
-                if (productIndex !== -1) {
-                    products[productIndex].isApproved = true;
-                    products[productIndex].approvalDate = new Date().toISOString();
-                    // Keep the product in the main list but mark as approved
-                    localStorage.setItem('farmerProducts', JSON.stringify(products));
+                fetch(`/approve_product/${productId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
                     this.loadPendingProducts();
                     this.loadApprovedProducts();
                     this.showNotification('Product approved successfully');
-                }
+                });
             }
 
             rejectProduct(productId) {
-                const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
-                const productIndex = products.findIndex(p => p.id === productId);
-                
-                if (productIndex !== -1) {
-                    const rejectedProduct = {
-                        ...products[productIndex],
-                        rejectionDate: new Date().toISOString(),
-                        status: 'rejected'
-                    };
-
-                    // Remove from products and add to rejected list
-                    products.splice(productIndex, 1);
-                    localStorage.setItem('farmerProducts', JSON.stringify(products));
-
-                    // Save to rejected products
-                    const rejectedProducts = JSON.parse(localStorage.getItem('rejectedProducts') || '[]');
-                    rejectedProducts.push(rejectedProduct);
-                    localStorage.setItem('rejectedProducts', JSON.stringify(rejectedProducts));
-
-                    this.loadPendingProducts();
-                    this.loadRejectedProducts();
-                    this.showNotification('Product rejected');
+                if (confirm('Are you sure you want to reject this product?')) {
+                    fetch(`/reject_product/${productId}`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            this.showNotification('Error: ' + data.error);
+                        } else {
+                            this.loadPendingProducts();
+                            this.loadApprovedProducts();
+                            this.showNotification('Product rejected successfully');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        this.showNotification('Error rejecting product');
+                    });
                 }
             }
 
             removeProduct(productId) {
                 if (confirm('Are you sure you want to permanently remove this item?')) {
-                    const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
-                    const updatedProducts = products.filter(p => p.id !== productId);
-                    localStorage.setItem('farmerProducts', JSON.stringify(updatedProducts));
-                    this.loadPendingProducts();
-                    this.loadApprovedProducts();
-                    this.showNotification('Item removed successfully');
+                    fetch(`/delete_product/${productId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            this.showNotification('Error: ' + data.error);
+                        } else {
+                            this.loadPendingProducts();
+                            this.loadApprovedProducts();
+                            this.showNotification('Product deleted successfully');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        this.showNotification('Error deleting product');
+                    });
                 }
             }
 
             loadApprovedProducts() {
-                const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
-                const approvedProducts = products.filter(p => p.isApproved);
-                this.displayApprovedProducts(approvedProducts);
+                fetch('/get_approved_products')
+                    .then(response => response.json())
+                    .then(products => {
+                        this.displayApprovedProducts(products);
+                    });
             }
 
             displayApprovedProducts(products) {
@@ -309,17 +414,23 @@
                     return;
                 }
 
-                container.innerHTML = products.map(product => `
+                container.innerHTML = products.map(product => {
+                    // Format the date properly
+                    const createdDate = new Date(product.created_at).toLocaleDateString() || 'Not available';
+                    
+                    return `
                     <div class="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
-                        <img src="${product.image}" alt="${product.name}" 
-                             class="w-full h-48 object-cover rounded-lg mb-4">
+                        <img src="${product.image_url || 'https://via.placeholder.com/200x200?text=' + encodeURIComponent(product.name)}" 
+                             alt="${product.name}" 
+                             class="w-full h-48 object-cover rounded-lg mb-4"
+                             onerror="this.src='https://via.placeholder.com/200x200?text=${encodeURIComponent(product.name)}'">
                         <h3 class="font-semibold text-lg mb-2">${product.name}</h3>
                         <div class="space-y-1 text-sm text-gray-600">
                             <p>Category: ${product.category}</p>
                             <p>Price: ₹${product.price}/kg</p>
                             <p>Stock: ${product.stock}kg</p>
                             <p>Farmer: ${product.farmerName || 'Unknown'}</p>
-                            <p>Approved on: ${new Date(product.approvalDate).toLocaleDateString()}</p>
+                            <p>Added on: ${createdDate}</p>
                             <div class="mt-2">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     <i class="fas fa-check-circle mr-1"></i> Approved
@@ -337,45 +448,80 @@
                             </button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             }
 
             revokeApproval(productId) {
                 if (confirm('Are you sure you want to revoke approval for this product?')) {
-                    const products = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
-                    const productIndex = products.findIndex(p => p.id === productId);
-                    
-                    if (productIndex !== -1) {
-                        products[productIndex].isApproved = false;
-                        products[productIndex].approvalDate = null;
-                        localStorage.setItem('farmerProducts', JSON.stringify(products));
-                        
-                        this.loadApprovedProducts();
-                        this.loadPendingProducts();
-                        this.showNotification('Product approval revoked');
-                    }
+                    fetch(`/revoke_product/${productId}`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            this.showNotification('Error: ' + data.error);
+                        } else {
+                            this.loadApprovedProducts();
+                            this.loadPendingProducts();
+                            this.showNotification('Product approval revoked successfully');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        this.showNotification('Error revoking approval');
+                    });
                 }
             }
 
             loadRejectedProducts() {
-                const rejectedProducts = JSON.parse(localStorage.getItem('rejectedProducts') || '[]');
+                fetch('/get_rejected_products')
+                    .then(response => response.json())
+                    .then(products => {
+                        this.displayRejectedProducts(products);
+                    })
+                    .catch(error => {
+                        console.error('Error loading rejected products:', error);
+                        const container = document.getElementById('rejectedProducts');
+                        container.innerHTML = '<p class="text-red-500 text-center">Error loading rejected products</p>';
+                    });
+            }
+
+            displayRejectedProducts(products) {
                 const container = document.getElementById('rejectedProducts');
                 
-                if (rejectedProducts.length === 0) {
+                if (!products || products.length === 0) {
                     container.innerHTML = '<p class="text-gray-500 col-span-full text-center py-4">No rejected products</p>';
                     return;
                 }
 
-                container.innerHTML = rejectedProducts.map(product => `
-                    <div class="border rounded-lg p-4 bg-gray-50 hover:shadow-md transition-shadow">
-                        <img src="${product.image}" alt="${product.name}" 
-                             class="w-full h-48 object-cover rounded-lg mb-4">
+                container.innerHTML = products.map(product => `
+                    <div class="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                        <img src="${product.image_url || 'https://via.placeholder.com/200x200?text=' + encodeURIComponent(product.name)}" 
+                             alt="${product.name}" 
+                             class="w-full h-48 object-cover rounded-lg mb-4"
+                             onerror="this.src='https://via.placeholder.com/200x200?text=${encodeURIComponent(product.name)}'">
                         <h3 class="font-semibold text-lg mb-2">${product.name}</h3>
                         <div class="space-y-1 text-sm text-gray-600">
                             <p>Category: ${product.category}</p>
                             <p>Price: ₹${product.price}/kg</p>
-                            <p>Rejected on: ${new Date(product.rejectionDate).toLocaleDateString()}</p>
+                            <p>Stock: ${product.stock}kg</p>
                             <p>Farmer: ${product.farmerName || 'Unknown'}</p>
+                            <p>Added on: ${new Date(product.created_at).toLocaleDateString()}</p>
+                            <div class="mt-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    <i class="fas fa-times-circle mr-1"></i> Rejected
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <button onclick="adminDashboard.approveProduct('${product.id}')"
+                                    class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-check mr-2"></i>Approve
+                            </button>
+                            <button onclick="adminDashboard.removeProduct('${product.id}')"
+                                    class="w-10 bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     </div>
                 `).join('');
@@ -437,12 +583,13 @@
 
         // Initialize admin dashboard
         const adminDashboard = new AdminDashboard();
-        
-        fetch('footer.html')
-            .then(response => response.text())
-            .then(html => {
-                document.body.insertAdjacentHTML('beforeend', html);
-            });
+
+        function logout() {
+            fetch('/logout')
+                .then(() => {
+                    window.location.href = '/admin-login';
+                });
+        }
     </script>
 </body>
 </html>

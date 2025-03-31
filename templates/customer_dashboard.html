@@ -8,57 +8,109 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-[#FAF3E0] m-0 font-sans">
-    <script>
-        fetch('navbar.html')
-            .then(response => response.text())
-            .then(html => {
-                document.body.insertAdjacentHTML('afterbegin', html);
-                document.body.style.paddingTop = '60px';
-            });
-    </script>
-    <div class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
+    <!-- Custom Navbar -->
+    <nav class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <div class="flex justify-between items-center max-w-7xl mx-auto">
-            <h1 class="text-white m-0">Kisansetu Customer Dashboard</h1>
-            
-            <!-- Hamburger Button -->
-            <button class="lg:hidden text-white focus:outline-none" onclick="toggleMenu()">
-                <i class="fas fa-bars text-2xl"></i>
-            </button>
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl font-bold text-white">KisanSetu</h1>
+                <a href="/customer/dashboard" class="text-white hover:text-gray-200">Home</a>
+                <a href="/about" class="text-white hover:text-gray-200">About</a>
+            </div>
 
             <!-- Desktop Navigation -->
             <div class="hidden lg:flex gap-5 items-center">
-                <a href="#orders" class="text-white no-underline">Orders</a>
-                <a href="#wishlist" class="text-white no-underline">Wishlist</a>
-                <a href="#cart" class="text-white no-underline">
-                    Cart <span class="cart-count">0</span>
+                <a href="/orders" class="text-white no-underline hover:text-gray-200 flex items-center gap-1">
+                    <i class="fas fa-box"></i>
+                    <span>Orders</span>
                 </a>
-                <a href="login.html" class="bg-[#FF9800] text-white px-4 py-2 rounded-md hover:bg-[#F57C00] transition-colors">
-                    <i class="fas fa-user-plus"></i> Register as Farmer
+                <a href="/wishlist" class="text-white no-underline hover:text-gray-200 flex items-center gap-1">
+                    <i class="fas fa-heart"></i>
+                    <span>Wishlist</span>
                 </a>
+                <a href="/cart" class="text-white no-underline hover:text-gray-200 flex items-center gap-1">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Cart</span>
+                </a>
+                <div class="relative group">
+                    <button id="profileButton" 
+                            onclick="toggleProfileMenu()"
+                            class="text-white flex items-center gap-2 hover:text-gray-200 focus:outline-none">
+                        <img src="https://ui-avatars.com/api/?name={{ session.get('user_name', '') }}&background=random" 
+                             alt="Profile" 
+                             class="w-8 h-8 rounded-full">
+                        <span>{{ session.get('user_name', '') }}</span>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
+                    </button>
+                    <div id="profileMenu"
+                         class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg hidden">
+                        <div class="py-1">
+                            <a href="/profile" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+                                <i class="fas fa-user-cog mr-2"></i>Profile Settings
+                            </a>
+                            <hr class="my-1">
+                            <button onclick="logout()" 
+                                    class="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Mobile Navigation -->
-            <div id="mobileMenu" class="fixed top-[60px] left-0 right-0 bg-[#4CAF50] p-4 hidden lg:hidden">
-                <div class="flex flex-col gap-4">
-                    <a href="#orders" class="text-white no-underline py-2 hover:bg-[#388E3C] px-4 rounded">Orders</a>
-                    <a href="#wishlist" class="text-white no-underline py-2 hover:bg-[#388E3C] px-4 rounded">Wishlist</a>
-                    <a href="#cart" class="text-white no-underline py-2 hover:bg-[#388E3C] px-4 rounded">
-                        Cart <span class="cart-count">0</span>
+            <!-- Mobile Menu Button -->
+            <button class="lg:hidden text-white" onclick="toggleMenu()">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Navigation -->
+        <div id="mobileMenu" class="fixed top-[72px] left-0 right-0 bg-[#4CAF50] p-4 hidden lg:hidden">
+            <div class="flex flex-col gap-4">
+                <a href="/orders" class="text-white no-underline py-2 hover:bg-[#388E3C] px-4 rounded flex items-center gap-2">
+                    <i class="fas fa-box"></i>
+                    <span>Orders</span>
+                </a>
+                <a href="#wishlist" class="text-white no-underline py-2 hover:bg-[#388E3C] px-4 rounded flex items-center">
+                    <i class="fas fa-heart"></i>
+                    <span>Wishlist</span>
+                </a>
+                <a href="/cart" class="text-white no-underline py-2 hover:bg-[#388E3C] px-4 rounded flex items-center">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Cart</span>
+                </a>
+                <div class="border-t border-[#388E3C] pt-4">
+                    <div class="flex items-center gap-3 px-4 mb-3">
+                        <img src="https://ui-avatars.com/api/?name={{ session.get('user_name', '') }}&background=random" 
+                             alt="Profile" 
+                             class="w-8 h-8 rounded-full">
+                        <span class="text-white">{{ session.get('user_name', '') }}</span>
+                    </div>
+                    <a href="/profile" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+                        <i class="fas fa-user-cog mr-2"></i>Profile Settings
                     </a>
-                    <a href="login.html" class="bg-[#FF9800] text-white px-4 py-2 rounded-md hover:bg-[#F57C00] transition-colors text-center">
-                        <i class="fas fa-user-plus"></i> Register as Farmer
-                    </a>
+                    <button onclick="logout()" class="w-full text-left text-white py-2 hover:bg-[#388E3C] px-4 rounded mt-2">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
+    </nav>
 
     <div class="pt-20 px-5 max-w-7xl mx-auto">
         <!-- Search Section -->
         <div class="bg-white p-5 rounded-lg shadow mb-5">
             <div class="flex gap-3 flex-wrap">
-                <input type="text" id="searchInput" placeholder="Search products..." 
-                       class="flex-1 p-2 border rounded">
+                <div class="flex-1 flex gap-2">
+                    <input type="text" id="searchInput" placeholder="Search products..." 
+                           class="flex-1 p-2 border rounded">
+                    <button onclick="handleSearch()" 
+                            class="bg-[#4CAF50] text-white px-4 py-2 rounded hover:bg-[#388E3C] transition-colors flex items-center gap-2">
+                        <span id="searchIcon" class="block"><i class="fas fa-search"></i></span>
+                        <span id="searchSpinner" class="hidden">
+                            <i class="fas fa-circle-notch fa-spin"></i>
+                        </span>
+                    </button>
+                </div>
                 <select id="categoryFilter" class="p-2 border rounded">
                     <option value="all">All Categories</option>
                     <option value="vegetables">Vegetables</option>
@@ -74,11 +126,18 @@
                     <option value="501-up">₹501+</option>
                 </select>
                 <select id="sortBy" class="p-2 border rounded">
+                    <option value="rating-desc">Rating: High to Low</option>
                     <option value="price-asc">Price: Low to High</option>
                     <option value="price-desc">Price: High to Low</option>
-                    <option value="rating-desc">Rating: High to Low</option>
                     <option value="name-asc">Name: A to Z</option>
                 </select>
+            </div>
+        </div>
+
+        <!-- After the search section -->
+        <div class="bg-white p-5 rounded-lg shadow mb-5">
+            <div id="wishlistGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Products will be loaded here -->
             </div>
         </div>
 
@@ -93,17 +152,7 @@
             <div id="ordersList"></div>
         </div>
 
-        <!-- Wishlist Section -->
-        <div id="wishlist" class="bg-white p-5 rounded-lg shadow mb-5">
-            <h2 class="text-xl font-bold mb-5">My Wishlist</h2>
-            <div id="wishlistGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5"></div>
-        </div>
-
-        <!-- Reviews Section -->
-        <div id="reviews" class="bg-white p-5 rounded-lg shadow mb-5">
-            <h2 class="text-xl font-bold mb-5">My Reviews</h2>
-            <div id="reviewsList"></div>
-        </div>
+        <!-- Remove wishlist and reviews sections -->
     </div>
 
     <!-- Review Modal -->
@@ -143,7 +192,16 @@
             items: [],
             add(product) {
                 try {
-                    this.items.push(product);
+                    // Check if product already exists
+                    const existingItem = this.items.find(item => item.id === product.id);
+                    if (existingItem) {
+                        existingItem.quantity += 1;
+                    } else {
+                        this.items.push({
+                            ...product,
+                            quantity: 1
+                        });
+                    }
                     this.updateCount();
                     this.saveToLocal();
                     return true;
@@ -206,318 +264,263 @@
         class CustomerProductManager {
             constructor() {
                 this.init();
-                this.farmerCategories = new Set(['vegetables', 'fruits', 'grains', 'pulses']);
             }
 
             init() {
-                this.loadFarmerCategories();
-                this.startProductSync();
+                console.log("Initializing CustomerProductManager");
+                this.loadProducts();
+                setInterval(() => this.loadProducts(), 30000);
             }
 
-            loadFarmerCategories() {
-                // Get farmer's categories from localStorage
-                const farmerData = JSON.parse(localStorage.getItem('farmerData') || '{}');
-                this.farmerCategories = new Set(farmerData.categories || []);
+            loadProducts() {
+                console.log("Loading products...");
+                const categoryFilter = document.getElementById('categoryFilter').value;
+                const searchQuery = document.getElementById('searchInput').value.trim();
+                const priceFilter = document.getElementById('priceFilter').value;
+
+                fetch('/get_approved_products')
+                    .then(response => {
+                        console.log("Server response:", response.status);
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json();
+                    })
+                    .then(products => {
+                        console.log("Received products:", products);
+                        if (products.error) {
+                            throw new Error(products.error);
+                        }
+                        let filteredProducts = this.filterProducts(products, categoryFilter, searchQuery, priceFilter);
+                        this.displayProducts(filteredProducts);
+                    })
+                    .catch(error => {
+                        console.error('Error loading products:', error);
+                        const container = document.getElementById('wishlistGrid');
+                        if (container) {
+                            container.innerHTML = '<p class="text-red-500 text-center col-span-full py-4">Error loading products. Please try again.</p>';
+                        }
+                    });
             }
 
-            startProductSync() {
-                // Check for updates every 2 seconds
-                setInterval(() => this.syncProducts(), 2000);
+            filterProducts(products, category, searchQuery, priceRange) {
+                let filtered = products.filter(product => {
+                    const matchesSearch = searchQuery === '' || 
+                        product.name.toLowerCase().includes(searchQuery.toLowerCase());
+                    const matchesCategory = category === 'all' || 
+                        product.category.toLowerCase() === category.toLowerCase();
+                    const matchesPrice = this.checkPriceRange(product.price, priceRange);
+                    return matchesSearch && matchesCategory && matchesPrice;
+                });
+
+                // Get sort value
+                const sortBy = document.getElementById('sortBy').value;
+                filtered = this.sortProducts(filtered, sortBy);
                 
-                // Listen for changes
-                window.addEventListener('storage', (e) => {
-                    if (e.key === 'farmerProducts' || e.key === 'farmerData') {
-                        this.syncProducts();
+                return filtered;
+            }
+
+            sortProducts(products, sortBy) {
+                return [...products].sort((a, b) => {
+                    switch (sortBy) {
+                        case 'price-asc':
+                            return parseFloat(a.price) - parseFloat(b.price);
+                        case 'price-desc':
+                            return parseFloat(b.price) - parseFloat(a.price);
+                        case 'rating-desc':
+                            return (parseFloat(b.rating) || 0) - (parseFloat(a.rating) || 0);
+                        case 'name-asc':
+                            return a.name.localeCompare(b.name);
+                        default:
+                            return 0;
                     }
                 });
             }
 
-            syncProducts() {
-                try {
-                    const allProducts = JSON.parse(localStorage.getItem('farmerProducts') || '[]');
-                    // Only show approved products
-                    const approvedProducts = allProducts.filter(product => product.isApproved === true);
-                    
-                    if (approvedProducts.length === 0) {
-                        const wishlistGrid = document.getElementById('wishlistGrid');
-                        wishlistGrid.innerHTML = '<p class="text-center text-gray-500 py-4">No products available at the moment.</p>';
-                        return;
-                    }
-                    
-                    this.updateWishlistDisplay(approvedProducts);
-                } catch (error) {
-                    console.error('Error syncing products:', error);
+            displayProducts(products) {
+                console.log("Displaying products:", products);
+                const container = document.getElementById('wishlistGrid');
+                if (!container) {
+                    console.error('Product container not found');
+                    return;
                 }
+
+                if (!products || products.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center col-span-full py-4">No products available</p>';
+                    return;
+                }
+
+                container.innerHTML = products.map(product => `
+                    <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                        <div class="relative">
+                            <img src="${product.image_url || 'https://via.placeholder.com/200x200?text=' + encodeURIComponent(product.name)}" 
+                                 alt="${product.name}" 
+                                 class="w-full h-48 object-cover rounded-lg mb-4"
+                                 onerror="this.src='https://via.placeholder.com/200x200?text=${encodeURIComponent(product.name)}'">
+                            <!-- Add wishlist button -->
+                            <button onclick="toggleWishlist('${product.id}')"
+                                    class="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors wishlist-btn"
+                                    data-product-id="${product.id}">
+                                <i class="fas fa-heart text-gray-400 wishlist-icon"></i>
+                            </button>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2">${product.name}</h3>
+                        <div class="flex items-center mb-2">
+                            ${this.generateStarRating(product.rating || 0)}
+                            <span class="text-gray-600 text-sm ml-2">(${product.rating || 0})</span>
+                        </div>
+                        <p class="text-gray-600">Category: ${product.category}</p>
+                        <p class="text-green-600 font-bold">₹${product.price}/kg</p>
+                        <p class="text-gray-600 line-clamp-2 mb-2 h-12 overflow-hidden">${product.description || 'No description available'}</p>
+                        <p class="text-sm text-gray-600 mb-2">By ${product.farmerName || 'Unknown'}</p>
+                        <button onclick="addToCart('${product.id}', '${product.name.replace(/'/g, "\\'")}', ${parseFloat(product.price)})"
+                                class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                            Add to Cart
+                        </button>
+                    </div>
+                `).join('');
+
+                // Update wishlist button states
+                this.updateWishlistButtons();
+            }
+
+            generateStarRating(rating) {
+                const fullStars = Math.floor(rating);
+                const hasHalfStar = rating % 1 >= 0.5;
+                const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+                
+                return `
+                    <div class="flex text-yellow-400">
+                        ${Array(fullStars).fill('<i class="fas fa-star"></i>').join('')}
+                        ${hasHalfStar ? '<i class="fas fa-star-half-alt"></i>' : ''}
+                        ${Array(emptyStars).fill('<i class="far fa-star"></i>').join('')}
+                    </div>
+                `;
             }
 
             updateWishlistDisplay(products) {
-                const wishlistGrid = document.getElementById('wishlistGrid');
-                if (!wishlistGrid) return;
-
-                const customerWishlist = JSON.parse(localStorage.getItem('customerWishlist') || '[]');
-                
-                // Filter by selected category
-                const selectedCategory = document.getElementById('categoryFilter').value;
-                const filteredProducts = products.filter(product => 
-                    selectedCategory === 'all' || product.category === selectedCategory
-                );
-
-                const wishlistHTML = filteredProducts.length > 0 ? 
-                    filteredProducts.map(product => `
-                        <div class="border p-3 rounded-lg relative bg-white" data-product-id="${product.id}" data-category="${product.category}">
-                            ${this.isNewProduct(product) ? '<div class="absolute top-2 left-2 bg-pink-500 text-white px-2 py-1 rounded text-xs animate-pulse">New!</div>' : ''}
-                            ${product.isVerified ? '<div class="absolute top-10 left-2 bg-[#4CAF50] text-white px-2 py-1 rounded text-xs flex items-center gap-1"><i class="fas fa-check-circle text-green-500"></i> Verified</div>' : ''}
-                            <div class="absolute top-2 right-2 text-xs ${product.stock > 0 ? 'text-green-500' : 'text-red-500'}">
-                                ${product.stock > 0 ? `${product.stock} kg available` : 'Out of Stock'}
-                            </div>
-                            <img src="${product.image}" 
-                                 alt="${product.name}" 
-                                 onerror="this.src='https://via.placeholder.com/200x200?text=${encodeURIComponent(product.name)}'"
-                                 class="w-full h-40 object-cover rounded">
-                            <h3 class="text-lg font-bold mt-2">${product.name}</h3>
-                            <p class="text-gray-700">₹${product.price}/kg</p>
-                            <div class="text-yellow-500 text-sm flex items-center gap-1">
-                                <span>★ ${product.rating}</span>
-                                <small>(${product.reviews} reviews)</small>
-                            </div>
-                            <button onclick="addToCart('${product.id}', '${product.name}', ${product.price})" 
-                                ${product.stock <= 0 ? 'disabled' : ''}
-                                class="w-full mt-2 px-4 py-2 bg-[#4CAF50] text-white rounded hover:bg-[#388E3C] transition-colors ${product.stock <= 0 ? 'bg-gray-300 cursor-not-allowed' : ''}">
-                                ${product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
-                            </button>
-                            <button class="absolute top-2 right-10 text-pink-500 ${customerWishlist.includes(product.id) ? 'text-pink-600' : ''}" 
-                                    onclick="toggleWishlist('${product.id}')">
-                                <i class="fa${customerWishlist.includes(product.id) ? 's' : 'r'} fa-heart"></i>
-                            </button>
-                            <button onclick="toggleFarmerDetails('${product.id}')"
-                                    class="w-full mt-2 px-4 py-2 bg-[#FBC02D] text-white rounded hover:bg-[#F9A825] transition-colors">
-                                <i class="fas fa-user-circle mr-1"></i> View Farmer Details
-                            </button>
-                            <div id="farmerDetails-${product.id}" class="hidden mt-3 p-3 bg-gray-50 rounded-lg border text-sm">
-                                <h4 class="font-semibold mb-1">Farmer: ${product.farmerName}</h4>
-                                <p class="text-gray-600"><i class="fas fa-map-marker-alt text-red-500 mr-1"></i> ${product.location || 'Location not available'}</p>
-                                ${product.description ? `<p class="mt-2 text-gray-700">${product.description}</p>` : ''}
-                            </div>
-                        </div>
-                    `).join('') : 
-                    '<p class="text-gray-500 text-center py-4">No products available in selected category</p>';
-
-                wishlistGrid.innerHTML = wishlistHTML;
+                this.displayProducts(products);
             }
 
-            isNewProduct(product) {
-                const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-                return new Date(product.addedDate).getTime() > twentyFourHoursAgo;
+            checkPriceRange(price, range) {
+                if (range === 'all') return true;
+                const [min, max] = range.split('-').map(Number);
+                if (range === '501-up') return price >= 501;
+                return price >= min && max ? price <= max : true;
+            }
+
+            updateWishlistButtons() {
+                fetch('/get_wishlist', { credentials: 'include' })
+                    .then(response => response.json())
+                    .then(wishlist => {
+                        const wishlistIds = new Set(wishlist.map(item => item.id));
+                        document.querySelectorAll('.wishlist-btn').forEach(btn => {
+                            const productId = btn.dataset.productId;
+                            const icon = btn.querySelector('.wishlist-icon');
+                            if (wishlistIds.has(productId)) {
+                                icon.classList.remove('text-gray-400');
+                                icon.classList.add('text-red-500');
+                            }
+                        });
+                    })
+                    .catch(error => console.error('Error updating wishlist buttons:', error));
             }
         }
 
-        function toggleWishlist(productId) {
-            const wishlist = JSON.parse(localStorage.getItem('customerWishlist') || '[]');
-            const index = wishlist.indexOf(productId);
-            
-            if (index === -1) {
-                wishlist.push(productId);
-            } else {
-                wishlist.splice(index, 1);
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                window.customerProductManager = new CustomerProductManager();
+                setupEventListeners();
+                
+                // Setup interval for periodic updates
+                setInterval(async () => {
+                    if (!document.hidden) {  // Only update when page is visible
+                        await updateWishlistCount();
+                    }
+                }, 30000); // Update every 30 seconds instead of 5 seconds
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
             }
-            
-            localStorage.setItem('customerWishlist', JSON.stringify(wishlist));
-            customerProductManager.syncProducts();
+        });
+
+        // Setup filter event listeners
+        function setupEventListeners() {
+            ['categoryFilter', 'searchInput', 'priceFilter'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('change', () => window.customerProductManager.loadProducts());
+                    if (id === 'searchInput') {
+                        element.addEventListener('keyup', debounce(() => 
+                            window.customerProductManager.loadProducts(), 300));
+                    }
+                }
+            });
+        }
+
+        async function toggleWishlist(productId) {
+            const btn = document.querySelector(`.wishlist-btn[data-product-id="${productId}"]`);
+            const icon = btn.querySelector('.wishlist-icon');
+            const isWishlisted = icon.classList.contains('text-red-500');
+
+            try {
+                const response = await fetch(isWishlisted ? `/remove_from_wishlist/${productId}` : `/add_to_wishlist/${productId}`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Toggle heart color
+                    icon.classList.toggle('text-gray-400');
+                    icon.classList.toggle('text-red-500');
+                    
+                    // Show notification
+                    showNotification(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+                }
+            } catch (error) {
+                console.error('Error toggling wishlist:', error);
+                showNotification('Failed to update wishlist', 'error');
+            }
         }
 
         function addToCart(productId, productName, price) {
-            cart.add({ id: productId, name: productName, price: price });
-            showNotification(`Added ${productName} to cart`);
+            try {
+                const product = {
+                    id: productId,
+                    name: productName,
+                    price: parseFloat(price),
+                    quantity: 1
+                };
+                
+                const success = cart.add(product);
+                if (success) {
+                    showNotification(`Added ${productName} to cart`);
+                } else {
+                    showNotification('Failed to add product to cart', 'error');
+                }
+            } catch (error) {
+                console.error('Error in addToCart:', error);
+                showNotification('Failed to add product to cart', 'error');
+            }
         }
 
-        function showNotification(message) {
+        function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
             notification.textContent = message;
             notification.style.cssText = `
                 position: fixed;
                 bottom: 20px;
                 right: 20px;
-                background: #4CAF50;
-                color: white;
                 padding: 10px 20px;
                 border-radius: 4px;
                 z-index: 1000;
+                ${type === 'success' ? 
+                    'background: #4CAF50; color: white;' : 
+                    'background: #f44336; color: white;'}
             `;
             document.body.appendChild(notification);
             setTimeout(() => notification.remove(), 3000);
-        }
-
-        const dummyProductData = {
-            vegetables: [
-                { name: 'Fresh Tomatoes', priceRange: [20, 40] },
-                { name: 'Red Onions', priceRange: [15, 30] },
-                { name: 'Green Peas', priceRange: [40, 60] },
-                { name: 'Fresh Spinach', priceRange: [25, 35] },
-                { name: 'Sweet Potatoes', priceRange: [30, 45] },
-                { name: 'Green Chillies', priceRange: [20, 35] },
-                { name: 'Cauliflower', priceRange: [25, 40] },
-                { name: 'Cabbage', priceRange: [20, 30] },
-                { name: 'Carrots', priceRange: [30, 45] },
-                { name: 'Bell Peppers', priceRange: [40, 60] },
-                { name: 'Broccoli', priceRange: [60, 90] },
-                { name: 'Eggplant', priceRange: [30, 50] },
-                { name: 'Mushrooms', priceRange: [80, 120] },
-                { name: 'Baby Corn', priceRange: [70, 100] },
-                { name: 'Cucumber', priceRange: [20, 35] },
-                { name: 'Bitter Gourd', priceRange: [40, 60] },
-                { name: 'Lady Finger', priceRange: [30, 50] },
-                { name: 'Radish', priceRange: [25, 40] },
-                { name: 'Beetroot', priceRange: [35, 55] },
-                { name: 'Green Beans', priceRange: [40, 60] },
-                { name: 'Zucchini', priceRange: [70, 100] },
-                { name: 'Asparagus', priceRange: [150, 200] },
-                { name: 'Brussels Sprouts', priceRange: [120, 180] },
-                { name: 'Chinese Cabbage', priceRange: [40, 60] },
-                { name: 'Spring Onions', priceRange: [30, 50] },
-                { name: 'Garlic', priceRange: [80, 120] },
-                { name: 'Ginger', priceRange: [60, 90] },
-                { name: 'Celery', priceRange: [50, 80] },
-                { name: 'Pumpkin', priceRange: [30, 50] },
-                { name: 'Sweet Corn', priceRange: [40, 70] }
-            ],
-            fruits: [
-                { name: 'Apples', priceRange: [80, 120] },
-                { name: 'Oranges', priceRange: [60, 90] },
-                { name: 'Bananas', priceRange: [40, 60] },
-                { name: 'Grapes', priceRange: [70, 100] },
-                { name: 'Mangoes', priceRange: [100, 150] },
-                { name: 'Pomegranate', priceRange: [120, 180] },
-                { name: 'Watermelon', priceRange: [40, 60] },
-                { name: 'Papaya', priceRange: [50, 70] },
-                { name: 'Pineapple', priceRange: [60, 90] },
-                { name: 'Sweet Lime', priceRange: [70, 100] },
-                { name: 'Kiwi', priceRange: [180, 250] },
-                { name: 'Dragon Fruit', priceRange: [200, 300] },
-                { name: 'Strawberries', priceRange: [150, 200] },
-                { name: 'Custard Apple', priceRange: [80, 120] },
-                { name: 'Guava', priceRange: [60, 90] },
-                { name: 'Figs', priceRange: [120, 180] },
-                { name: 'Jamun', priceRange: [70, 100] },
-                { name: 'Plum', priceRange: [90, 130] },
-                { name: 'Peach', priceRange: [150, 200] },
-                { name: 'Lychee', priceRange: [160, 220] },
-                { name: 'Avocado', priceRange: [200, 300] },
-                { name: 'Blueberries', priceRange: [300, 400] },
-                { name: 'Raspberries', priceRange: [280, 350] },
-                { name: 'Blackberries', priceRange: [250, 320] },
-                { name: 'Passion Fruit', priceRange: [180, 250] },
-                { name: 'Apricot', priceRange: [150, 200] },
-                { name: 'Cherries', priceRange: [200, 280] },
-                { name: 'Mulberry', priceRange: [120, 180] },
-                { name: 'Star Fruit', priceRange: [160, 220] },
-                { name: 'Rambutan', priceRange: [250, 350] }
-            ],
-            grains: [
-                { name: 'Organic Rice', priceRange: [50, 80] },
-                { name: 'Wheat Flour', priceRange: [40, 60] },
-                { name: 'Brown Rice', priceRange: [70, 100] },
-                { name: 'Quinoa', priceRange: [200, 300] },
-                { name: 'Oats', priceRange: [80, 120] },
-                { name: 'Barley', priceRange: [60, 90] },
-                { name: 'Millet', priceRange: [50, 70] },
-                { name: 'Corn', priceRange: [40, 60] },
-                { name: 'Rye', priceRange: [70, 100] },
-                { name: 'Sorghum', priceRange: [45, 65] },
-                { name: 'Pearl Millet', priceRange: [40, 60] },
-                { name: 'Finger Millet', priceRange: [45, 70] },
-                { name: 'Amaranth', priceRange: [90, 130] },
-                { name: 'Buckwheat', priceRange: [80, 120] },
-                { name: 'Wild Rice', priceRange: [200, 300] },
-                { name: 'Semolina', priceRange: [50, 80] },
-                { name: 'Couscous', priceRange: [120, 180] },
-                { name: 'Whole Wheat', priceRange: [35, 55] },
-                { name: 'Red Rice', priceRange: [90, 140] },
-                { name: 'Black Rice', priceRange: [180, 250] },
-                { name: 'Bamboo Rice', priceRange: [200, 300] },
-                { name: 'Purple Rice', priceRange: [180, 250] },
-                { name: 'Jasmine Rice', priceRange: [120, 180] },
-                { name: 'Basmati Rice', priceRange: [150, 200] },
-                { name: 'Green Wheat', priceRange: [90, 130] },
-                { name: 'Spelt', priceRange: [100, 150] },
-                { name: 'Kamut', priceRange: [180, 250] },
-                { name: 'Teff', priceRange: [200, 280] },
-                { name: 'Sushi Rice', priceRange: [130, 180] },
-                { name: 'Arborio Rice', priceRange: [160, 220] }
-            ],
-            pulses: [
-                { name: 'Yellow Dal', priceRange: [90, 120] },
-                { name: 'Red Lentils', priceRange: [100, 140] },
-                { name: 'Black Beans', priceRange: [80, 110] },
-                { name: 'Chickpeas', priceRange: [70, 100] },
-                { name: 'Green Moong Dal', priceRange: [110, 150] },
-                { name: 'Kidney Beans', priceRange: [120, 160] },
-                { name: 'Black Gram', priceRange: [90, 130] },
-                { name: 'White Peas', priceRange: [70, 100] },
-                { name: 'Pigeon Peas', priceRange: [100, 140] },
-                { name: 'Moth Beans', priceRange: [80, 110] },
-                { name: 'Split Peas', priceRange: [80, 120] },
-                { name: 'Navy Beans', priceRange: [100, 150] },
-                { name: 'Pinto Beans', priceRange: [90, 130] },
-                { name: 'Lima Beans', priceRange: [110, 160] },
-                { name: 'Mung Beans', priceRange: [100, 140] },
-                { name: 'Masoor Dal', priceRange: [90, 130] },
-                { name: 'Urad Dal', priceRange: [100, 150] },
-                { name: 'Chana Dal', priceRange: [80, 120] },
-                { name: 'Field Peas', priceRange: [70, 100] },
-                { name: 'Horse Gram', priceRange: [60, 90] },
-                { name: 'French Beans', priceRange: [90, 130] },
-                { name: 'Fava Beans', priceRange: [110, 160] },
-                { name: 'Adzuki Beans', priceRange: [150, 200] },
-                { name: 'Green Split Peas', priceRange: [80, 120] },
-                { name: 'Yellow Split Peas', priceRange: [75, 110] },
-                { name: 'Red Kidney Beans', priceRange: [100, 150] },
-                { name: 'White Kidney Beans', priceRange: [110, 160] },
-                { name: 'Cannellini Beans', priceRange: [120, 170] },
-                { name: 'Great Northern Beans', priceRange: [100, 140] },
-                { name: 'Garbanzo Beans', priceRange: [90, 130] }
-            ]
-        };
-
-        function generateDummyProducts() {
-            let allProducts = [];
-            let id = 1;
-
-            Object.entries(dummyProductData).forEach(([category, products]) => {
-                products.forEach(product => {
-                    const variants = Math.floor(Math.random() * 3) + 2; // 2-4 variants
-                    for (let i = 0; i < variants; i++) {
-                        const price = Math.floor(
-                            Math.random() * (product.priceRange[1] - product.priceRange[0]) + 
-                            product.priceRange[0]
-                        );
-                        const stock = Math.floor(Math.random() * 100) + 1;
-                        const variantName = i === 0 ? product.name : 
-                                          i === 1 ? `Premium ${product.name}` : 
-                                          `Organic ${product.name}`;
-                        const priceMultiplier = i === 0 ? 1 : 
-                                              i === 1 ? 1.5 : 2;
-                        
-                        allProducts.push({
-                            id: id++,
-                            name: variantName,
-                            category: category,
-                            price: Math.floor(price * priceMultiplier),
-                            stock: stock,
-                            image: `https://source.unsplash.com/200x200/?${product.name.toLowerCase().replace(' ', '-')}`,
-                            addedDate: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-                            rating: (Math.random() * 2 + 3).toFixed(1),
-                            reviews: Math.floor(Math.random() * 50) + 1,
-                            organic: i === 2,
-                            premium: i === 1,
-                            isApproved: true, // Set default dummy products as approved
-                            isVerified: Math.random() > 0.3, // 70% products verified
-                            approvalDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
-                        });
-                    }
-                });
-            });
-
-            return allProducts;
         }
 
         // Add filter function
@@ -555,7 +558,7 @@
                 switch (sortBy) {
                     case 'price-asc': return a.price - b.price;
                     case 'price-desc': return b.price - a.price;
-                    case 'rating-desc': return b.rating - a.rating;
+                    case 'rating-desc': return (parseFloat(b.rating) || 0) - (parseFloat(a.rating) || 0);
                     case 'name-asc': return a.name.localeCompare(b.name);
                     default: return 0;
                 }
@@ -578,6 +581,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded, initializing...");
             try {
                 initializeSectionVisibility();
                 cart.loadFromLocal();
@@ -612,6 +616,16 @@
             document.getElementById('searchInput')?.addEventListener('input', debounce(filterProducts, 300));
             document.getElementById('categoryFilter')?.addEventListener('change', filterProducts);
             document.getElementById('priceFilter')?.addEventListener('change', filterProducts);
+            
+            // Add keyboard navigation for profile menu
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const profileMenu = document.getElementById('profileMenu');
+                    const icon = document.querySelector('#profileButton .fa-chevron-down');
+                    profileMenu.classList.add('hidden');
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            });
         }
 
         function toggleMenu() {
@@ -640,9 +654,83 @@
             const detailsDiv = document.getElementById(`farmerDetails-${productId}`);
             detailsDiv.classList.toggle('hidden');
         }
+
+        function logout() {
+            fetch('/logout')
+                .then(() => {
+                    window.location.href = '/login';
+                });
+        }
+
+        // Add this new function for handling search with loading animation
+        function handleSearch() {
+            const searchButton = document.querySelector('button');
+            const searchIcon = document.getElementById('searchIcon');
+            const searchSpinner = document.getElementById('searchSpinner');
+            const container = document.getElementById('wishlistGrid');
+
+            // Show loading animation
+            searchIcon.classList.add('hidden');
+            searchSpinner.classList.remove('hidden');
+            container.innerHTML = `
+                <div class="col-span-full flex justify-center items-center py-8">
+                    <div class="text-center">
+                        <i class="fas fa-circle-notch fa-spin text-4xl text-green-500"></i>
+                        <p class="mt-2 text-gray-600">Searching products...</p>
+                    </div>
+                </div>
+            `;
+
+            // Simulate loading delay and then perform search
+            setTimeout(() => {
+                window.customerProductManager.loadProducts();
+                // Hide loading animation
+                searchIcon.classList.remove('hidden');
+                searchSpinner.classList.add('hidden');
+            }, 800); // 800ms delay for smooth animation
+        }
+
+        // Update the filter event listeners
+        function setupEventListeners() {
+            ['categoryFilter', 'priceFilter', 'sortBy'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('change', () => window.customerProductManager.loadProducts());
+                }
+            });
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter') {
+                        handleSearch();
+                    }
+                });
+            }
+        }
+
+        function toggleProfileMenu() {
+            const menu = document.getElementById('profileMenu');
+            const button = document.getElementById('profileButton');
+            const icon = button.querySelector('.fa-chevron-down');
+            
+            menu.classList.toggle('hidden');
+            icon.style.transform = menu.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+
+        // Close profile menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const profileButton = document.getElementById('profileButton');
+            const profileMenu = document.getElementById('profileMenu');
+            
+            if (!profileButton.contains(e.target) && !profileMenu.contains(e.target)) {
+                profileMenu.classList.add('hidden');
+                profileButton.querySelector('.fa-chevron-down').style.transform = 'rotate(0deg)';
+            }
+        });
     </script>
     <script>
-        fetch('footer.html')
+        fetch('/footer')  // Changed from 'footer.html' to '/footer'
             .then(response => response.text())
             .then(html => {
                 document.body.insertAdjacentHTML('beforeend', html);

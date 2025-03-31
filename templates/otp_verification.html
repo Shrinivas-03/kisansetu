@@ -9,6 +9,11 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h1 class="text-2xl font-bold mb-4 text-center">OTP Verification</h1>
+        {% if session.get('user_type') == 'farmer' %}
+            <div class="mb-4 p-4 bg-yellow-100 text-yellow-700 rounded">
+                Note: After verification, your account will need admin approval before you can login.
+            </div>
+        {% endif %}
         <form method="POST" action="{{ url_for('otp_verification') }}" class="space-y-4">
             <div>
                 <label for="otp" class="block text-sm font-medium text-gray-700">Enter OTP:</label>
@@ -20,6 +25,9 @@
                 Verify
             </button>
         </form>
+        <p class="mt-4 text-center text-sm text-gray-600">
+            <a href="{{ url_for('login') }}" class="text-indigo-600 hover:underline">Back to Login</a>
+        </p>
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <ul class="mt-4 text-sm text-red-600">

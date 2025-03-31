@@ -135,7 +135,7 @@
                     </div>
                 </div>
 
-                <button onclick="placeOrder()" 
+                <button onclick="checkout.placeOrder()" 
                         class="w-full bg-[#FF9800] text-white py-4 rounded-lg font-semibold hover:bg-[#F57C00] transition-colors">
                     Place Order
                 </button>
@@ -146,90 +146,125 @@
     <script>
         class CheckoutManager {
             constructor() {
-                this.items = [];
-                this.loadFromLocal();
-                this.render();
+                this.loadCartItems();
+                this.setupEventListeners();
             }
 
-            loadFromLocal() {
-                const saved = localStorage.getItem('checkoutCart');
-                if (saved) {
-                    this.items = JSON.parse(saved);
+            loadCartItems() {
+                const items = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
+                if (!items.length) {
+                    window.location.href = '/cart';
+                    return;
                 }
+                this.displayItems(items);
             }
 
-            calculateTotal() {
-                const subtotal = this.items.reduce((sum, item) => 
-                    sum + (item.price * (item.quantity || 1)), 0);
-                const deliveryFee = this.items.length > 0 ? 40 : 0;
-                const total = subtotal + deliveryFee;
-
-                return { subtotal, deliveryFee, total };
-            }
-
-            render() {
+            displayItems(items) {
                 const container = document.getElementById('orderItems');
-                container.innerHTML = this.items.map(item => `
-                    <div class="flex items-center gap-4 py-4">
-                        <img src="${item.image || `https://source.unsplash.com/100x100/?${item.name}`}" 
-                             alt="${item.name}"
-                             class="w-16 h-16 object-cover rounded-md">
+                if (!container) return;
+
+                const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const deliveryFee = 40;  // Fixed delivery fee
+
+                container.innerHTML = items.map(item => `
+                    <div class="flex justify-between items-center py-4 border-b">
                         <div class="flex-1">
                             <h3 class="font-medium">${item.name}</h3>
-                            <p class="text-sm text-gray-500">${item.quantity || 1} × ₹${item.price}/kg</p>
+                            <p class="text-sm text-gray-500">${item.quantity} × ₹${item.price}</p>
                         </div>
-                        <div class="text-right">
-                            <p class="font-semibold">₹${item.price * (item.quantity || 1)}</p>
-                        </div>
+                        <p class="font-semibold">₹${(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                 `).join('');
 
-                const { subtotal, deliveryFee, total } = this.calculateTotal();
-                document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
-                document.getElementById('deliveryFee').textContent = `₹${deliveryFee.toFixed(2)}`;
-                document.getElementById('total').textContent = `₹${total.toFixed(2)}`;
+                // Update summary
+                document.getElementById('subtotal').textContent = `₹${total.toFixed(2)}`;
+                document.getElementById('total').textContent = `₹${(total + deliveryFee).toFixed(2)}`;
+            }
+
+            setupEventListeners() {
+                const form = document.getElementById('addressForm');
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.placeOrder();
+                    });
+                }
+            }
+
+            async placeOrder() {
+                try {
+                    const addressForm = document.getElementById('addressForm');
+                    if (!addressForm.checkValidity()) {
+                        addressForm.reportValidity();
+                        return;
+                    }
+
+                    // Calculate total from items
+                    const items = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
+                    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                    const deliveryFee = 40;
+                    const totalAmount = subtotal + deliveryFee;
+
+                    const orderData = {
+                        delivery_details: {
+                            name: document.getElementById('fullName').value,
+                            phone: document.getElementById('phone').value,
+                            address: document.getElementById('address').value,
+                            city: document.getElementById('city').value,
+                            state: document.getElementById('state').value,
+                            pincode: document.getElementById('pincode').value
+                        },
+                        items: items,
+                        payment_method: document.querySelector('input[name="payment"]:checked').value,
+                        total_amount: totalAmount,
+                        delivery_fee: deliveryFee
+                    };
+
+                    // Show loading state
+                    const button = document.querySelector('button[onclick="checkout.placeOrder()"]');
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+                    const response = await fetch('/place_order', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(orderData),
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Clear cart data
+                        localStorage.removeItem('cart');
+                        localStorage.removeItem('checkoutCart');
+                        
+                        // Show success message
+                        alert(`Order placed successfully!\nOrder ID: ${result.orderId}`);
+                        window.location.href = '/customer/dashboard';
+                    } else {
+                        throw new Error(result.error || 'Failed to place order');
+                    }
+                } catch (error) {
+                    console.error('Error placing order:', error);
+                    alert('Error placing order: ' + error.message);
+                } finally {
+                    // Reset button state
+                    const button = document.querySelector('button[onclick="checkout.placeOrder()"]');
+                    button.disabled = false;
+                    button.innerHTML = 'Place Order';
+                }
             }
         }
 
-        function placeOrder() {
-            const form = document.getElementById('addressForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const orderDetails = {
-                orderId: Date.now().toString(),
-                items: checkoutManager.items,
-                total: checkoutManager.calculateTotal().total,
-                delivery: {
-                    name: document.getElementById('fullName').value,
-                    phone: document.getElementById('phone').value,
-                    address: document.getElementById('address').value,
-                    city: document.getElementById('city').value,
-                    state: document.getElementById('state').value,
-                    pincode: document.getElementById('pincode').value
-                },
-                payment: document.querySelector('input[name="payment"]:checked').value,
-                status: 'Pending',
-                orderDate: new Date().toISOString()
-            };
-
-            // Save order
-            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-            orders.push(orderDetails);
-            localStorage.setItem('orders', JSON.stringify(orders));
-
-            // Clear cart
-            localStorage.removeItem('cart');
-            localStorage.removeItem('checkoutCart');
-
-            // Show success and redirect
-            alert('Order placed successfully!');
-            window.location.href = 'customer_dashboard.html';
-        }
-
-        const checkoutManager = new CheckoutManager();
+        // Initialize checkout
+        const checkout = new CheckoutManager();
 
         // Add touch device optimizations
         if ('ontouchstart' in window) {
@@ -253,6 +288,17 @@
             .then(html => {
                 document.body.insertAdjacentHTML('beforeend', html);
             });
+
+        // Pre-fill form with user data if available
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = {
+                name: "{{ user.name }}",
+                phone: "{{ user.phone }}"
+            };
+            
+            if (user.name) document.getElementById('fullName').value = user.name;
+            if (user.phone) document.getElementById('phone').value = user.phone;
+        });
     </script>
 </body>
 </html>
