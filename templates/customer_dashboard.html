@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 m-0 font-sans">
-    <div class="bg-blue-600 p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
+<body class="bg-[#FAF3E0] m-0 font-sans">
+    <div class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <div class="flex justify-between items-center max-w-7xl mx-auto">
             <h1 class="text-white m-0">Kisansetu Customer Dashboard</h1>
             
@@ -24,20 +24,20 @@
                 <a href="#cart" class="text-white no-underline">
                     Cart <span class="cart-count">0</span>
                 </a>
-                <a href="login.html" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors">
+                <a href="login.html" class="bg-[#FF9800] text-white px-4 py-2 rounded-md hover:bg-[#F57C00] transition-colors">
                     <i class="fas fa-user-plus"></i> Register as Farmer
                 </a>
             </div>
 
             <!-- Mobile Navigation -->
-            <div id="mobileMenu" class="fixed top-[60px] left-0 right-0 bg-blue-600 p-4 hidden lg:hidden">
+            <div id="mobileMenu" class="fixed top-[60px] left-0 right-0 bg-[#4CAF50] p-4 hidden lg:hidden">
                 <div class="flex flex-col gap-4">
-                    <a href="#orders" class="text-white no-underline py-2 hover:bg-blue-700 px-4 rounded">Orders</a>
-                    <a href="#wishlist" class="text-white no-underline py-2 hover:bg-blue-700 px-4 rounded">Wishlist</a>
-                    <a href="#cart" class="text-white no-underline py-2 hover:bg-blue-700 px-4 rounded">
+                    <a href="#orders" class="text-white no-underline py-2 hover:bg-[#388E3C] px-4 rounded">Orders</a>
+                    <a href="#wishlist" class="text-white no-underline py-2 hover:bg-[#388E3C] px-4 rounded">Wishlist</a>
+                    <a href="#cart" class="text-white no-underline py-2 hover:bg-[#388E3C] px-4 rounded">
                         Cart <span class="cart-count">0</span>
                     </a>
-                    <a href="login.html" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors text-center">
+                    <a href="login.html" class="bg-[#FF9800] text-white px-4 py-2 rounded-md hover:bg-[#F57C00] transition-colors text-center">
                         <i class="fas fa-user-plus"></i> Register as Farmer
                     </a>
                 </div>
@@ -111,7 +111,7 @@
                 <button onclick="closeReviewModal()" 
                     class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
                 <button onclick="submitReview()" 
-                    class="px-4 py-2 bg-blue-600 text-white rounded">Submit</button>
+                    class="px-4 py-2 bg-[#4CAF50] text-white rounded hover:bg-[#388E3C] transition-colors">Submit</button>
             </div>
         </div>
     </div>
@@ -245,9 +245,9 @@
 
                 const wishlistHTML = filteredProducts.length > 0 ? 
                     filteredProducts.map(product => `
-                        <div class="border p-3 rounded-lg relative" data-product-id="${product.id}" data-category="${product.category}">
+                        <div class="border p-3 rounded-lg relative bg-white" data-product-id="${product.id}" data-category="${product.category}">
                             ${this.isNewProduct(product) ? '<div class="absolute top-2 left-2 bg-pink-500 text-white px-2 py-1 rounded text-xs animate-pulse">New!</div>' : ''}
-                            ${product.isVerified ? '<div class="absolute top-10 left-2 bg-blue-600 text-white px-2 py-1 rounded text-xs flex items-center gap-1"><i class="fas fa-check-circle text-green-500"></i> Verified</div>' : ''}
+                            ${product.isVerified ? '<div class="absolute top-10 left-2 bg-[#4CAF50] text-white px-2 py-1 rounded text-xs flex items-center gap-1"><i class="fas fa-check-circle text-green-500"></i> Verified</div>' : ''}
                             <div class="absolute top-2 right-2 text-xs ${product.stock > 0 ? 'text-green-500' : 'text-red-500'}">
                                 ${product.stock > 0 ? `${product.stock} kg available` : 'Out of Stock'}
                             </div>
@@ -263,7 +263,7 @@
                             </div>
                             <button onclick="addToCart('${product.id}', '${product.name}', ${product.price})" 
                                 ${product.stock <= 0 ? 'disabled' : ''}
-                                class="w-full mt-2 px-4 py-2 bg-blue-600 text-white rounded ${product.stock <= 0 ? 'bg-gray-300 cursor-not-allowed' : ''}">
+                                class="w-full mt-2 px-4 py-2 bg-[#4CAF50] text-white rounded hover:bg-[#388E3C] transition-colors ${product.stock <= 0 ? 'bg-gray-300 cursor-not-allowed' : ''}">
                                 ${product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
                             </button>
                             <button class="absolute top-2 right-10 text-pink-500 ${customerWishlist.includes(product.id) ? 'text-pink-600' : ''}" 

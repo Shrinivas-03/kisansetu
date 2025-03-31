@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 m-0 font-sans">
-    <div class="bg-green-600 p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
+<body class="bg-[#FAF3E0] m-0 font-sans">
+    <div class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <h1 class="text-white m-0">Kisansetu Farmer Dashboard</h1>
     </div>
 
@@ -17,15 +17,15 @@
         <div class="bg-white p-5 rounded-lg shadow mb-5">
             <h2 class="text-xl font-bold mb-4">Product Management</h2>
             <button onclick="addNewProduct()" 
-                    class="bg-green-500 text-white px-6 py-3 rounded-md flex items-center gap-2 mb-5 hover:bg-green-600 transition-colors">
+                    class="bg-[#4CAF50] text-white px-6 py-3 rounded-md flex items-center gap-2 mb-5 hover:bg-[#388E3C] transition-colors">
                 <i class="fas fa-plus"></i> Add New Product
             </button>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5" id="productList"></div>
         </div>
 
         <!-- Order Management Section -->
-        <div class="bg-white p-5 rounded-lg shadow mb-5">
-            <h2 class="text-xl font-bold mb-4">Order Management</h2>
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-bold mb-6">Order Management</h2>
             <div id="orderList"></div>
         </div>
 
@@ -49,10 +49,24 @@
         </div>
 
         <!-- Analytics Section -->
-        <div class="bg-white p-5 rounded-lg shadow mb-5">
-            <h2 class="text-xl font-bold mb-4">Sales & Performance Analytics</h2>
-            <div class="bg-gray-100 h-72 rounded-lg shadow p-5" id="salesChart">
-                <!-- Chart will be rendered here -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold text-[#4CAF50]">Total Sales</h3>
+                <div class="bg-gray-100 h-72 rounded-lg shadow p-5" id="salesChart">
+                    <!-- Chart will be rendered here -->
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold text-[#FBC02D]">Active Products</h3>
+                <div class="bg-gray-100 h-72 rounded-lg shadow p-5">
+                    <!-- Placeholder for active products analytics -->
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold text-[#FF9800]">Average Rating</h3>
+                <div class="bg-gray-100 h-72 rounded-lg shadow p-5">
+                    <!-- Placeholder for average rating analytics -->
+                </div>
             </div>
         </div>
 
@@ -161,11 +175,11 @@
                     <p>Stock: ${product.stock} kg</p>
                     <p>Category: ${product.category}</p>
                     <button onclick="updateProduct(${product.id})" 
-                        class="bg-blue-500 text-white px-3 py-1 rounded-md mr-2 hover:bg-blue-600 transition-colors">
+                        class="bg-[#FBC02D] text-white px-3 py-1 rounded-md mr-2 hover:bg-[#F9A825] transition-colors">
                         Update
                     </button>
                     <button onclick="deleteProduct(${product.id})" 
-                        class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition-colors">
+                        class="bg-[#FF9800] text-white px-3 py-1 rounded-md hover:bg-[#F57C00] transition-colors">
                         Delete
                     </button>
                 </div>
@@ -268,7 +282,7 @@
                     <p>${order.product} - ${order.quantity}kg</p>
                     <p>Amount: ₹${order.amount}</p>
                     <select onchange="updateOrderStatus(${order.id}, this.value)" 
-                        class="px-2 py-1 rounded-md border">
+                        class="px-3 py-2 border border-[#4CAF50] rounded-md text-[#4CAF50]">
                         <option ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option ${order.status === 'Processing' ? 'selected' : ''}>Processing</option>
                         <option ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>

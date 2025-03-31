@@ -7,9 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100">
+<body class="bg-[#FAF3E0]">
     <!-- Navbar -->
-    <nav class="bg-blue-600 text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
+    <nav class="bg-[#4CAF50] text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 py-3">
             <h1 class="text-2xl font-bold">Kisansetu Admin Dashboard</h1>
         </div>
@@ -93,12 +93,12 @@
                             <div class="flex gap-2">
                                 ${!farmer.isVerified ? `
                                     <button onclick="adminDashboard.verifyFarmer('${farmer.id}')"
-                                            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                            class="bg-[#4CAF50] hover:bg-[#388E3C] text-white px-4 py-2 rounded-lg transition-colors">
                                         <i class="fas fa-check mr-2"></i>Verify
                                     </button>
                                 ` : ''}
                                 <button onclick="adminDashboard.removeFarmer('${farmer.id}')"
-                                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                        class="bg-[#FF9800] hover:bg-[#F57C00] text-white px-4 py-2 rounded-lg transition-colors">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -166,11 +166,11 @@
                         </div>
                         <div class="flex gap-2 mt-4">
                             <button onclick="adminDashboard.approveProduct('${product.id}')"
-                                    class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                    class="flex-1 bg-[#4CAF50] hover:bg-[#388E3C] text-white px-4 py-2 rounded-lg transition-colors">
                                 <i class="fas fa-check mr-2"></i>Approve
                             </button>
                             <button onclick="adminDashboard.rejectProduct('${product.id}')"
-                                    class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                    class="flex-1 bg-[#FF9800] hover:bg-[#F57C00] text-white px-4 py-2 rounded-lg transition-colors">
                                 <i class="fas fa-times mr-2"></i>Reject
                             </button>
                         </div>

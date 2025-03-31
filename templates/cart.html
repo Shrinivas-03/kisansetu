@@ -7,9 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-50">
+<body class="bg-[#FAF3E0]">
     <!-- Navbar -->
-    <nav class="bg-blue-600 text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
+    <nav class="bg-[#4CAF50] text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <h1 class="text-xl md:text-2xl font-bold">Shopping Cart</h1>
             
@@ -26,7 +26,7 @@
             </div>
 
             <!-- Mobile Navigation -->
-            <div id="mobileMenu" class="fixed top-[60px] left-0 right-0 bg-blue-600 p-4 hidden lg:hidden">
+            <div id="mobileMenu" class="fixed top-[60px] left-0 right-0 bg-[#4CAF50] p-4 hidden lg:hidden">
                 <a href="customer_dashboard.html" class="text-white block py-2 hover:bg-blue-700 px-4 rounded">
                     <i class="fas fa-arrow-left mr-2"></i>Back to Shopping
                 </a>
@@ -61,7 +61,7 @@
                     </div>
                 </div>
                 <button onclick="proceedToCheckout()" 
-                        class="w-full bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors">
+                        class="w-full bg-[#FF9800] text-white py-3 rounded-lg font-semibold hover:bg-[#F57C00] transition-colors">
                     Proceed to Checkout
                 </button>
             </div>
@@ -137,12 +137,12 @@
                                     <p class="text-gray-600">₹${item.price}/kg</p>
                                     <div class="flex items-center gap-3 mt-2">
                                         <button onclick="cartManager.updateQuantity('${item.id}', ${(item.quantity || 1) - 1})"
-                                                class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100">
+                                                class="w-8 h-8 rounded-full border border-[#4CAF50] text-[#4CAF50] flex items-center justify-center hover:bg-[#E8F5E9]">
                                             <i class="fas fa-minus"></i>
                                         </button>
                                         <span>${item.quantity || 1}</span>
                                         <button onclick="cartManager.updateQuantity('${item.id}', ${(item.quantity || 1) + 1})"
-                                                class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100">
+                                                class="w-8 h-8 rounded-full border border-[#4CAF50] text-[#4CAF50] flex items-center justify-center hover:bg-[#E8F5E9]">
                                             <i class="fas fa-plus"></i>
                                         </button>
                                     </div>
