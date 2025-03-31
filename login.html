@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kisansetu - Login</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f0f2f5;">
+    <div style="background-color: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px;">
+        <h1 style="text-align: center; color: #1a73e8; margin-bottom: 2rem;">Kisansetu</h1>
+        <form id="loginForm" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="radio-group" style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 1rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="radio" name="role" value="customer" required>
+                    Customer
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="radio" name="role" value="admin" required>
+                    Admin
+                </label>
+            </div>
+
+            <input type="text" id="name" placeholder="Enter your name" required 
+                style="padding: 0.8rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            
+            <input type="email" id="email" placeholder="Enter your email" required 
+                pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                style="padding: 0.8rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            
+            <div id="addressContainer">
+                <textarea id="address" placeholder="Enter your address" required 
+                    style="padding: 0.8rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; min-height: 100px; width: 100%;"></textarea>
+            </div>
+            
+            <input type="password" id="password" placeholder="Enter your password" required 
+                pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+                title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 characters"
+                style="padding: 0.8rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            
+            <div style="display: flex; gap: 1rem; justify-content: space-between;">
+                <button type="submit" 
+                    style="padding: 0.8rem 1.5rem; background-color: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; flex: 1;">Login</button>
+                <button type="button" 
+                    style="padding: 0.8rem 1.5rem; background-color: #34a853; color: white; border: none; border-radius: 4px; cursor: pointer; flex: 1;">Sign Up</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let formValid = false;
+
+        function showError(message) {
+            const error = document.createElement('div');
+            error.style.color = '#ea4335';
+            error.style.marginTop = '5px';
+            error.style.fontSize = '0.9rem';
+            error.textContent = message;
+            error.classList.add('error-message');
+            return error;
+        }
+
+        function validateForm() {
+            const email = document.getElementById('email');
+            const password = document.getElementById('password');
+            const name = document.getElementById('name');
+            const address = document.getElementById('address');
+            
+            // Clear previous errors
+            document.querySelectorAll('.error-message').forEach(el => el.remove());
+            formValid = true;
+
+            if (!name.value.trim()) {
+                name.after(showError('Name is required'));
+                formValid = false;
+            }
+
+            if (!email.checkValidity()) {
+                email.after(showError('Please enter a valid email address'));
+                formValid = false;
+            }
+
+            if (!password.checkValidity()) {
+                password.after(showError('Password must be at least 8 characters with upper, lower case and numbers'));
+                formValid = false;
+            }
+
+            const role = document.querySelector('input[name="role"]:checked');
+            if (!role) {
+                document.querySelector('.radio-group').after(showError('Please select a role'));
+                formValid = false;
+            }
+
+            if (role && role.value === 'customer' && !address.value.trim()) {
+                address.after(showError('Address is required for customers'));
+                formValid = false;
+            }
+
+            return formValid;
+        }
+
+        // Handle role selection and address field visibility
+        document.querySelectorAll('input[name="role"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const addressContainer = document.getElementById('addressContainer');
+                addressContainer.style.display = this.value === 'customer' ? 'block' : 'none';
+                document.getElementById('address').required = this.value === 'customer';
+            });
+        });
+
+        // Handle form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const userData = {
+                role: role,
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                address: document.getElementById('address').value
+            };
+
+            // Save user data to localStorage
+            localStorage.setItem('userData', JSON.stringify(userData));
+
+            // Redirect based on role
+            try {
+                window.location.href = role === 'customer' ? 'customer_dashboard.html' : 'admin_dashboard.html';
+            } catch (error) {
+                alert('Error during login. Please try again.');
+            }
+        });
+
+        // Hide address field initially and handle signup
+        document.getElementById('addressContainer').style.display = 'none';
+        document.querySelector('button[type="button"]').addEventListener('click', function() {
+            alert('Sign up functionality will be implemented soon!');
+        });
+    </script>
+</body>
+</html>
