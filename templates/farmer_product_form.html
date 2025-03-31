@@ -4,255 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add New Product - Farmer Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
-            min-height: 100vh;
-            margin: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
-        }
-
-        .product-form {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 30px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .product-form::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #34a853, #4285f4, #ea4335);
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-            position: relative;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 0.95rem;
-        }
-
-        .form-group input, 
-        .form-group select, 
-        .form-group textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
-        }
-
-        .form-group input:focus, 
-        .form-group select:focus, 
-        .form-group textarea:focus {
-            border-color: #4285f4;
-            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
-            outline: none;
-        }
-
-        .preview-card {
-            background: #f8f9fa;
-            border: 2px dashed #e0e0e0;
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 30px;
-            transition: all 0.3s ease;
-        }
-
-        .preview-card:hover {
-            border-color: #4285f4;
-            background: #fff;
-        }
-
-        .preview-title {
-            color: #5f6368;
-            font-size: 1rem;
-            margin-bottom: 15px;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        #productPreview {
-            padding: 20px;
-            border-radius: 8px;
-            background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        #imagePreview {
-            border-radius: 12px;
-            transition: transform 0.3s ease;
-        }
-
-        #imagePreview:hover {
-            transform: scale(1.02);
-        }
-
-        .submit-btn {
-            background: linear-gradient(45deg, #34a853, #4285f4);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.3);
-        }
-
-        .description-helper {
-            background: #f1f8ff;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            color: #4285f4;
-            margin-top: 10px;
-        }
-
-        .description-helper ul {
-            margin: 10px 0 0 0;
-            padding-left: 20px;
-        }
-
-        .description-helper li {
-            margin: 5px 0;
-            color: #5f6368;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .product-form {
-            animation: fadeIn 0.5s ease-out;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .product-form {
-                margin: 20px 10px;
-                padding: 20px;
-            }
-
-            .form-group input, 
-            .form-group select, 
-            .form-group textarea {
-                padding: 10px;
-                font-size: 16px;
-            }
-
-            .preview-card {
-                padding: 15px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .product-form::before {
-                height: 3px;
-            }
-
-            #imagePreview {
-                height: 150px;
-            }
-
-            .submit-btn {
-                padding: 12px 20px;
-            }
-        }
-    </style>
 </head>
-<body>
-    <div class="product-form">
-        <h2>Add New Product</h2>
-        
-        <!-- Product Form -->
-        <div class="form-group">
-            <label for="productName">Product Name</label>
-            <input type="text" id="productName" required>
-        </div>
+<body class="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+    <div class="max-w-3xl mx-auto p-5">
+        <div class="bg-white rounded-xl shadow-lg p-8 relative overflow-hidden mt-10">
+            <!-- Gradient Top Border -->
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 via-blue-500 to-red-500"></div>
 
-        <div class="form-group">
-            <label for="productCategory">Category</label>
-            <select id="productCategory" required>
-                <option value="">Select Category</option>
-                <option value="vegetables">Vegetables</option>
-                <option value="fruits">Fruits</option>
-                <option value="grains">Grains</option>
-                <option value="pulses">Pulses</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="productPrice">Price per kg (₹)</label>
-            <input type="number" id="productPrice" required>
-        </div>
-
-        <div class="form-group">
-            <label for="productStock">Available Stock (kg)</label>
-            <input type="number" id="productStock" required>
-        </div>
-
-        <div class="form-group">
-            <label for="productDescription">Product Description</label>
-            <textarea id="productDescription" rows="4" style="width: 100%; padding: 8px;" 
-                placeholder="Describe your product's quality, benefits, storage instructions, etc."
-                oninput="updatePreview()"></textarea>
-            <div class="description-helper">
-                Suggested information to include:
-                <ul>
-                    <li>Quality and freshness details</li>
-                    <li>Cultivation method (organic/traditional)</li>
-                    <li>Storage instructions</li>
-                    <li>Best uses and benefits</li>
-                    <li>Harvesting date/season</li>
-                </ul>
+            <h2 class="text-2xl font-bold mb-8">Add New Product</h2>
+            
+            <!-- Product Form -->
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Product Name</label>
+                    <input type="text" id="productName" required
+                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                    <select id="productCategory" required
+                            class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        <option value="">Select Category</option>
+                        <option value="vegetables">Vegetables</option>
+                        <option value="fruits">Fruits</option>
+                        <option value="grains">Grains</option>
+                        <option value="pulses">Pulses</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Price per kg (₹)</label>
+                    <input type="number" id="productPrice" required
+                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Available Stock (kg)</label>
+                    <input type="number" id="productStock" required
+                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Product Description</label>
+                    <textarea id="productDescription" rows="4" 
+                              class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                              placeholder="Describe your product's quality, benefits, storage instructions, etc."
+                              oninput="updatePreview()"></textarea>
+                    <div class="bg-blue-50 p-4 rounded-lg text-sm text-blue-500 mt-2">
+                        Suggested information to include:
+                        <ul class="list-disc pl-5">
+                            <li>Quality and freshness details</li>
+                            <li>Cultivation method (organic/traditional)</li>
+                            <li>Storage instructions</li>
+                            <li>Best uses and benefits</li>
+                            <li>Harvesting date/season</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Product Image</label>
+                    <input type="file" id="productImage" accept="image/*" 
+                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                           onchange="previewImage(event)">
+                </div>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label for="productImage">Product Image</label>
-            <input type="file" id="productImage" accept="image/*" onchange="previewImage(event)">
-        </div>
-
-        <!-- Preview Section -->
-        <div class="preview-card">
-            <div class="preview-title">Preview how it will appear to customers:</div>
-            <div id="productPreview" style="border: 1px solid #eee; padding: 10px; border-radius: 4px;">
-                <img id="imagePreview" style="width: 100%; height: 200px; object-fit: cover; display: none;">
-                <h3 id="previewName"></h3>
-                <p id="previewPrice"></p>
-                <div id="previewDescription" style="font-size: 14px; color: #666;"></div>
+            <!-- Preview Section -->
+            <div class="bg-gray-100 border-2 border-dashed border-gray-200 rounded-lg p-6 mt-6 transition hover:border-blue-500 hover:bg-white">
+                <div class="text-center text-sm font-medium text-gray-500 mb-4">Preview how it will appear to customers:</div>
+                <div id="productPreview" class="border border-gray-200 p-4 rounded-lg">
+                    <img id="imagePreview" class="w-full h-48 object-cover rounded-lg hidden">
+                    <h3 id="previewName" class="text-lg font-semibold mt-4"></h3>
+                    <p id="previewPrice" class="text-sm text-gray-600"></p>
+                    <div id="previewDescription" class="text-sm text-gray-500"></div>
+                </div>
             </div>
-        </div>
 
-        <button class="submit-btn" onclick="submitProduct()">
-            Add Product
-        </button>
+            <button class="bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-lg w-full mt-6 hover:shadow-lg"
+                    onclick="submitProduct()">
+                Add Product
+            </button>
+        </div>
     </div>
 
     <script>

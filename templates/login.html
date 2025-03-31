@@ -4,211 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kisansetu - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f0f2f5;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .login-container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .submit-btn {
-            width: 100%;
-            padding: 10px;
-            background: #1a73e8;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .toggle-form {
-            text-align: center;
-            margin-top: 20px;
-            color: #1a73e8;
-            cursor: pointer;
-        }
-        .form-title {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #1a73e8;
-        }
-        .hidden {
-            display: none;
-        }
-        .otp-container {
-            display: none;
-            margin: 20px 0;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            animation: slideDown 0.3s ease;
-        }
-        .otp-input {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin: 15px 0;
-        }
-        .otp-input input {
-            width: 45px;
-            height: 45px;
-            text-align: center;
-            font-size: 1.2rem;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-        .otp-input input:focus {
-            border-color: #1a73e8;
-            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-            outline: none;
-        }
-        .resend-otp {
-            text-align: center;
-            color: #1a73e8;
-            cursor: pointer;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            transition: color 0.3s ease;
-        }
-        .resend-otp:hover {
-            color: #0d47a1;
-            text-decoration: underline;
-        }
-        @keyframes slideDown {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .login-container {
-                width: 90%;
-                padding: 20px;
-                margin: 20px auto;
-            }
-
-            .otp-input {
-                gap: 5px;
-            }
-
-            .otp-input input {
-                width: 35px;
-                height: 35px;
-                font-size: 1rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-
-            .form-group input,
-            .form-group textarea {
-                font-size: 16px; /* Prevents zoom on mobile */
-            }
-        }
-    </style>
 </head>
-<body>
-    <div class="login-container">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-5">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <!-- Login Form -->
         <div id="loginForm">
-            <h2 class="form-title">Login to Kisansetu</h2>
-            <div class="form-group">
-                <label for="loginEmail">Email</label>
-                <input type="email" id="loginEmail" required>
+            <h2 class="text-2xl text-blue-600 text-center mb-8">Login to Kisansetu</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block font-bold mb-2">Email</label>
+                    <input type="email" id="loginEmail" required
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Password</label>
+                    <input type="password" id="loginPassword" required
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <button class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="login()">Login</button>
+                <div class="text-center text-blue-600 mt-4 cursor-pointer" onclick="toggleForm()">Register as Farmer</div>
             </div>
-            <div class="form-group">
-                <label for="loginPassword">Password</label>
-                <input type="password" id="loginPassword" required>
-            </div>
-            <button class="submit-btn" onclick="login()">Login</button>
-            <div class="toggle-form" onclick="toggleForm()">Register as Farmer</div>
         </div>
 
         <!-- Farmer Registration Form -->
         <div id="registerForm" class="hidden">
-            <h2 class="form-title">Farmer Registration</h2>
-            <div class="form-group">
-                <label for="farmerName">Full Name</label>
-                <input type="text" id="farmerName" required>
-            </div>
-            <div class="form-group">
-                <label for="farmerEmail">Email</label>
-                <input type="email" id="farmerEmail" required>
-            </div>
-            <div class="form-group">
-                <label for="farmerPhone">Contact Number</label>
-                <input type="tel" id="farmerPhone" pattern="[0-9]{10}" required>
-            </div>
-            <div class="form-group">
-                <label for="farmerPassword">Password</label>
-                <input type="password" id="farmerPassword" required>
-            </div>
-            <div class="form-group">
-                <label for="farmerAddress">Address</label>
-                <textarea id="farmerAddress" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Product Categories</label>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                    <label><input type="checkbox" value="vegetables"> Vegetables</label>
-                    <label><input type="checkbox" value="fruits"> Fruits</label>
-                    <label><input type="checkbox" value="grains"> Grains</label>
-                    <label><input type="checkbox" value="pulses"> Pulses</label>
+            <h2 class="text-2xl text-blue-600 text-center mb-8">Farmer Registration</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block font-bold mb-2">Full Name</label>
+                    <input type="text" id="farmerName" required
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                 </div>
+                <div>
+                    <label class="block font-bold mb-2">Email</label>
+                    <input type="email" id="farmerEmail" required
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Contact Number</label>
+                    <input type="tel" id="farmerPhone" pattern="[0-9]{10}" required
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Password</label>
+                    <input type="password" id="farmerPassword" required
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Address</label>
+                    <textarea id="farmerAddress" rows="3" required
+                              class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500"></textarea>
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Product Categories</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label><input type="checkbox" value="vegetables" class="mr-2"> Vegetables</label>
+                        <label><input type="checkbox" value="fruits" class="mr-2"> Fruits</label>
+                        <label><input type="checkbox" value="grains" class="mr-2"> Grains</label>
+                        <label><input type="checkbox" value="pulses" class="mr-2"> Pulses</label>
+                    </div>
+                </div>
+                <button class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="registerFarmer()">Register</button>
+                <div class="text-center text-blue-600 mt-4 cursor-pointer" onclick="toggleForm()">Back to Login</div>
             </div>
-            <button class="submit-btn" onclick="registerFarmer()">Register</button>
-            <div class="toggle-form" onclick="toggleForm()">Back to Login</div>
         </div>
 
-        <!-- Add OTP Verification Form -->
-        <div id="otpVerification" class="otp-container">
-            <h3 class="form-title">Verify Your Phone Number</h3>
-            <p style="text-align: center; color: #666;">
+        <!-- OTP Verification Form -->
+        <div id="otpVerification" class="hidden">
+            <h3 class="text-xl text-blue-600 text-center mb-4">Verify Your Phone Number</h3>
+            <p class="text-center text-gray-600 mb-4">
                 We've sent a verification code to your phone number
                 <br>
-                <span id="maskedPhone" style="font-weight: bold;"></span>
+                <span id="maskedPhone" class="font-bold"></span>
             </p>
-            <div class="otp-input">
-                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric">
-                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric">
-                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric">
-                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric">
-                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric">
-                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric">
+            <div class="flex justify-center gap-2 mb-4">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" maxlength="1" pattern="[0-9]" inputmode="numeric"
+                       class="w-12 h-12 text-center text-xl border-2 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
             </div>
-            <button class="submit-btn" onclick="verifyOTP()">Verify OTP</button>
-            <div class="resend-otp" onclick="resendOTP()">Resend OTP</div>
+            <button class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="verifyOTP()">Verify OTP</button>
+            <div class="text-center text-blue-600 mt-4 cursor-pointer" onclick="resendOTP()">Resend OTP</div>
         </div>
     </div>
 

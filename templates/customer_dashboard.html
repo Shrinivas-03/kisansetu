@@ -4,277 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kisansetu - Customer Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .navbar {
-            background-color: #1a73e8;
-            padding: 1rem;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .navbar h1 {
-            color: white;
-            margin: 0;
-        }
-        .dashboard-container {
-            padding: 80px 20px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        .product-card {
-            border: 1px solid #ddd;
-            padding: 15px;
-            border-radius: 8px;
-            position: relative;
-        }
-        .wishlist-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-        .review-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .review-form {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            max-width: 400px;
-            width: 90%;
-        }
-        .star-rating {
-            display: flex;
-            gap: 5px;
-            font-size: 24px;
-            color: #ffd700;
-            cursor: pointer;
-        }
-        .order-card {
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-        }
-        .order-history {
-            margin-top: 20px;
-        }
-        .product-status {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            background: rgba(255,255,255,0.9);
-        }
-        .in-stock {
-            color: #4CAF50;
-        }
-        .out-of-stock {
-            color: #f44336;
-        }
-        .new-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: #ff4081;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            z-index: 2;
-            animation: pulse 2s infinite;
-        }
-        .wishlist-btn.active {
-            color: #ff4081;
-        }
-        .add-to-cart-btn.disabled {
-            background: #ccc !important;
-            cursor: not-allowed;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        .section-hidden {
-            display: none;
-        }
-        .active-section {
-            animation: fadeIn 0.3s ease-in;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            color: #666;
-            padding: 5px;
-        }
-        .close-btn:hover {
-            color: #333;
-        }
-        .verified-badge {
-            position: absolute;
-            top: 40px;
-            left: 10px;
-            background: #1a73e8;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            z-index: 2;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .verified-badge i {
-            color: #4CAF50;
-        }
-        .nav-links {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        .register-btn {
-            background: #4CAF50;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: background-color 0.3s;
-        }
-        .register-btn:hover {
-            background: #45a049;
-        }
-        @media (max-width: 768px) {
-            .dashboard-container {
-                padding: 60px 10px 10px;
-            }
-
-            .grid {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            }
-
-            .section {
-                padding: 15px;
-            }
-
-            .navbar h1 {
-                font-size: 1.2rem;
-            }
-
-            .search-section {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .search-section select,
-            .search-section input {
-                width: 100%;
-            }
-
-            .nav-links {
-                gap: 10px;
-                flex-wrap: wrap;
-            }
-            .register-btn {
-                padding: 6px 12px;
-                font-size: 0.9rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .product-card {
-                padding: 10px;
-            }
-
-            .review-form {
-                width: 95%;
-                padding: 15px;
-            }
-
-            .star-rating {
-                font-size: 20px;
-            }
-        }
-
-        /* Touch Device Optimizations */
-        @media (hover: none) {
-            .add-to-cart-btn:active,
-            .wishlist-btn:active {
-                transform: scale(0.95);
-            }
-
-            .submit-btn:active {
-                transform: translateY(1px);
-            }
-        }
-    </style>
 </head>
-<body style="background-color: #f0f2f5; margin: 0; font-family: Arial, sans-serif;">
-    <div class="navbar">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h1>Kisansetu Customer Dashboard</h1>
-            <div class="nav-links">
-                <a href="#orders" style="color: white; text-decoration: none;">Orders</a>
-                <a href="#wishlist" style="color: white; text-decoration: none;">Wishlist</a>
-                <a href="#cart" style="color: white; text-decoration: none;">
+<body class="bg-gray-100 m-0 font-sans">
+    <div class="bg-blue-600 p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
+        <div class="flex justify-between items-center">
+            <h1 class="text-white m-0">Kisansetu Customer Dashboard</h1>
+            <div class="flex gap-5">
+                <a href="#orders" class="text-white no-underline">Orders</a>
+                <a href="#wishlist" class="text-white no-underline">Wishlist</a>
+                <a href="#cart" class="text-white no-underline">
                     Cart <span class="cart-count">0</span>
                 </a>
-                <a href="login.html" class="register-btn">
+                <a href="login.html" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors">
                     <i class="fas fa-user-plus"></i> Register as Farmer
                 </a>
             </div>
         </div>
     </div>
 
-    <div class="dashboard-container">
+    <div class="pt-20 px-5 max-w-7xl mx-auto">
         <!-- Search Section -->
-        <div class="section">
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <div class="bg-white p-5 rounded-lg shadow mb-5">
+            <div class="flex gap-3 flex-wrap">
                 <input type="text" id="searchInput" placeholder="Search products..." 
-                       style="padding: 8px; flex: 1;">
-                <select id="categoryFilter" style="padding: 8px;">
+                       class="flex-1 p-2 border rounded">
+                <select id="categoryFilter" class="p-2 border rounded">
                     <option value="all">All Categories</option>
                     <option value="vegetables">Vegetables</option>
                     <option value="fruits">Fruits</option>
@@ -282,13 +38,13 @@
                     <option value="dairy">Dairy</option>
                     <option value="pulses">Pulses</option>
                 </select>
-                <select id="priceFilter" style="padding: 8px;">
+                <select id="priceFilter" class="p-2 border rounded">
                     <option value="all">All Prices</option>
                     <option value="0-100">₹0 - ₹100</option>
                     <option value="101-500">₹101 - ₹500</option>
                     <option value="501-up">₹501+</option>
                 </select>
-                <select id="sortBy" style="padding: 8px;">
+                <select id="sortBy" class="p-2 border rounded">
                     <option value="price-asc">Price: Low to High</option>
                     <option value="price-desc">Price: High to Low</option>
                     <option value="rating-desc">Rating: High to Low</option>
@@ -298,10 +54,10 @@
         </div>
 
         <!-- Orders Section -->
-        <div id="orders" class="section section-hidden">
-            <div class="section-header">
-                <h2>My Orders</h2>
-                <button onclick="hideOrders()" class="close-btn">
+        <div id="orders" class="bg-white p-5 rounded-lg shadow mb-5 hidden">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-xl font-bold">My Orders</h2>
+                <button onclick="hideOrders()" class="text-gray-500 text-lg">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -309,32 +65,32 @@
         </div>
 
         <!-- Wishlist Section -->
-        <div id="wishlist" class="section">
-            <h2>My Wishlist</h2>
-            <div id="wishlistGrid" class="grid"></div>
+        <div id="wishlist" class="bg-white p-5 rounded-lg shadow mb-5">
+            <h2 class="text-xl font-bold mb-5">My Wishlist</h2>
+            <div id="wishlistGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5"></div>
         </div>
 
         <!-- Reviews Section -->
-        <div id="reviews" class="section">
-            <h2>My Reviews</h2>
+        <div id="reviews" class="bg-white p-5 rounded-lg shadow mb-5">
+            <h2 class="text-xl font-bold mb-5">My Reviews</h2>
             <div id="reviewsList"></div>
         </div>
     </div>
 
     <!-- Review Modal -->
-    <div id="reviewModal" class="review-modal">
-        <div class="review-form">
-            <h3>Review Your Order</h3>
-            <div class="star-rating" id="starRating">
+    <div id="reviewModal" class="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-5 rounded-lg max-w-md w-full">
+            <h3 class="text-lg font-bold mb-5">Review Your Order</h3>
+            <div class="flex gap-2 text-yellow-500 text-2xl cursor-pointer mb-5" id="starRating">
                 <span>☆</span><span>☆</span><span>☆</span><span>☆</span><span>☆</span>
             </div>
             <textarea id="reviewText" placeholder="Write your review..." 
-                style="width: 100%; margin: 10px 0; padding: 8px; min-height: 100px;"></textarea>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                class="w-full p-2 border rounded mb-5 min-h-[100px]"></textarea>
+            <div class="flex justify-end gap-3">
                 <button onclick="closeReviewModal()" 
-                    style="padding: 8px 16px; background: #ddd; border: none; border-radius: 4px;">Cancel</button>
+                    class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
                 <button onclick="submitReview()" 
-                    style="padding: 8px 16px; background: #1a73e8; color: white; border: none; border-radius: 4px;">Submit</button>
+                    class="px-4 py-2 bg-blue-600 text-white rounded">Submit</button>
             </div>
         </div>
     </div>
@@ -401,7 +157,7 @@
             document.addEventListener('click', function(e) {
                 if (!ordersSection.contains(e.target) && 
                     !navOrders.contains(e.target) && 
-                    !ordersSection.classList.contains('section-hidden')) {
+                    !ordersSection.classList.contains('hidden')) {
                     hideOrders();
                 }
             });
@@ -409,15 +165,13 @@
 
         function showOrders() {
             const ordersSection = document.getElementById('orders');
-            ordersSection.classList.remove('section-hidden');
-            ordersSection.classList.add('active-section');
+            ordersSection.classList.remove('hidden');
             ordersSection.scrollIntoView({ behavior: 'smooth' });
         }
 
         function hideOrders() {
             const ordersSection = document.getElementById('orders');
-            ordersSection.classList.add('section-hidden');
-            ordersSection.classList.remove('active-section');
+            ordersSection.classList.add('hidden');
         }
 
         class CustomerProductManager {
@@ -470,28 +224,28 @@
 
                 const wishlistHTML = filteredProducts.length > 0 ? 
                     filteredProducts.map(product => `
-                        <div class="product-card" data-product-id="${product.id}" data-category="${product.category}">
-                            ${this.isNewProduct(product) ? '<div class="new-badge">New!</div>' : ''}
-                            ${product.isVerified ? '<div class="verified-badge"><i class="fas fa-check-circle"></i> Verified</div>' : ''}
-                            <div class="product-status ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}">
+                        <div class="border p-3 rounded-lg relative" data-product-id="${product.id}" data-category="${product.category}">
+                            ${this.isNewProduct(product) ? '<div class="absolute top-2 left-2 bg-pink-500 text-white px-2 py-1 rounded text-xs animate-pulse">New!</div>' : ''}
+                            ${product.isVerified ? '<div class="absolute top-10 left-2 bg-blue-600 text-white px-2 py-1 rounded text-xs flex items-center gap-1"><i class="fas fa-check-circle text-green-500"></i> Verified</div>' : ''}
+                            <div class="absolute top-2 right-2 text-xs ${product.stock > 0 ? 'text-green-500' : 'text-red-500'}">
                                 ${product.stock > 0 ? `${product.stock} kg available` : 'Out of Stock'}
                             </div>
                             <img src="${product.image}" 
                                  alt="${product.name}" 
                                  onerror="this.src='https://via.placeholder.com/200x200?text=${encodeURIComponent(product.name)}'"
-                                 style="width: 100%; height: 150px; object-fit: cover;">
-                            <h3>${product.name}</h3>
-                            <p>₹${product.price}/kg</p>
-                            <div class="rating">
+                                 class="w-full h-40 object-cover rounded">
+                            <h3 class="text-lg font-bold mt-2">${product.name}</h3>
+                            <p class="text-gray-700">₹${product.price}/kg</p>
+                            <div class="text-yellow-500 text-sm flex items-center gap-1">
                                 <span>★ ${product.rating}</span>
                                 <small>(${product.reviews} reviews)</small>
                             </div>
                             <button onclick="addToCart('${product.id}', '${product.name}', ${product.price})" 
                                 ${product.stock <= 0 ? 'disabled' : ''}
-                                class="add-to-cart-btn ${product.stock <= 0 ? 'disabled' : ''}">
+                                class="w-full mt-2 px-4 py-2 bg-blue-600 text-white rounded ${product.stock <= 0 ? 'bg-gray-300 cursor-not-allowed' : ''}">
                                 ${product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
                             </button>
-                            <button class="wishlist-btn ${customerWishlist.includes(product.id) ? 'active' : ''}" 
+                            <button class="absolute top-2 right-10 text-pink-500 ${customerWishlist.includes(product.id) ? 'text-pink-600' : ''}" 
                                     onclick="toggleWishlist('${product.id}')">
                                 <i class="fa${customerWishlist.includes(product.id) ? 's' : 'r'} fa-heart"></i>
                             </button>
