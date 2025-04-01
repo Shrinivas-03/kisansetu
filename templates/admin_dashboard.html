@@ -8,43 +8,57 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <!-- Load Navbar -->
-    <script>
-        fetch('/navbar')
-            .then(response => response.text())
-            .then(html => {
-                document.body.insertAdjacentHTML('afterbegin', html);
-                document.body.style.paddingTop = '60px';
-            });
-    </script>
-
-    <!-- Main Content -->
-    <div class="container mx-auto px-4 py-8">
-        <!-- Admin Header with Username and Logout -->
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">Admin Dashboard</h1>
-            <div class="flex items-center gap-4">
-                <span class="text-gray-600">Welcome, {{ session.get('admin_name', '') }}</span>
-                <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                </button>
+    <!-- Custom Admin Navbar -->
+    <nav class="bg-[#4CAF50] text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <h1 class="text-2xl font-bold">KisanSetu Admin</h1>
+                    <span class="text-sm bg-white text-[#4CAF50] px-2 py-1 rounded-full">Administrator</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <img src="https://ui-avatars.com/api/?name={{ session.get('admin_name', '') }}&background=random" 
+                             alt="Admin" 
+                             class="w-8 h-8 rounded-full border-2 border-white">
+                        <span class="font-medium text-white">{{ session.get('admin_name', '') }}</span>
+                    </div>
+                    <button onclick="logout()" 
+                            class="bg-white text-[#4CAF50] hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
             </div>
         </div>
-        <!-- Rest of the dashboard content -->
-        <div class="max-w-7xl mx-auto px-4 pt-20 pb-8">
-            <!-- Farmers Section -->
+    </nav>
+
+    <!-- Main Content - Adjust top padding for navbar -->
+    <div class="container mx-auto px-4 pt-20 pb-8">
+        <!-- Remove the old header since it's now in navbar -->
+        <div class="max-w-7xl mx-auto px-4 pb-8">
+            <!-- Pending Farmer Approvals - Now First -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 class="text-xl font-bold mb-6 text-gray-800">Registered Farmers</h2>
-                <div id="farmersList" class="space-y-4">
-                    <!-- Farmers will be listed here -->
+                <h2 class="text-xl font-bold mb-4">Pending Farmer Approvals</h2>
+                <div id="pendingApprovals" class="space-y-4">
+                    <!-- Combined registration and KYC approvals will be loaded here -->
                 </div>
             </div>
 
-            <!-- Add this before the Products Section -->
+            <!-- Add Registered Farmers Section -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 class="text-xl font-bold mb-6 text-gray-800">All Registered Farmers</h2>
-                <div id="registeredFarmersList" class="space-y-4">
-                    <!-- Registered farmers will be listed here -->
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Registered Farmers</h2>
+                    <div class="flex gap-2">
+                        <select id="farmerFilter" class="border rounded-lg px-3 py-2">
+                            <option value="all">All Farmers</option>
+                            <option value="verified">Verified</option>
+                            <option value="unverified">Unverified</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="registeredFarmers" class="space-y-4">
+                    <!-- Registered farmers will be loaded here -->
                 </div>
             </div>
 
@@ -108,6 +122,8 @@
             constructor() {
                 this.init();
                 this.cleanupProducts();
+                this.loadPendingKYC();
+                this.setupFilters();
             }
 
             cleanupProducts() {
@@ -122,21 +138,23 @@
             }
 
             init() {
-                this.loadFarmers();
+                this.loadPendingKYC();  // Now loads first
                 this.loadPendingProducts();
                 this.loadApprovedProducts();
                 this.loadRejectedProducts();
                 this.loadNotifications();
+                this.loadRegisteredFarmers();
                 this.startSync();
             }
 
             startSync() {
                 setInterval(() => {
-                    this.loadFarmers();
+                    this.loadPendingKYC();  // Update order here too
                     this.loadPendingProducts();
                     this.loadApprovedProducts();
                     this.loadRejectedProducts();
                     this.loadNotifications();
+                    this.loadRegisteredFarmers();
                 }, 5000);
             }
 
@@ -156,7 +174,7 @@
             }
 
             displayRegisteredFarmers(farmers) {
-                const container = document.getElementById('registeredFarmersList');
+                const container = document.getElementById('registeredFarmers');
                 if (!farmers || farmers.length === 0) {
                     container.innerHTML = '<p class="text-gray-500 text-center">No registered farmers</p>';
                     return;
@@ -578,6 +596,183 @@
                     localStorage.removeItem('adminNotifications');
                     this.loadNotifications();
                 }
+            }
+
+            async loadPendingKYC() {
+                try {
+                    const response = await fetch('/admin/pending-kyc');
+                    const kycData = await response.json();
+                    this.displayPendingKYC(kycData);
+                } catch (error) {
+                    console.error('Error loading KYC data:', error);
+                }
+            }
+
+            displayPendingKYC(kycData) {
+                const container = document.getElementById('pendingApprovals');
+                if (!kycData.length) {
+                    container.innerHTML = '<p class="text-gray-500">No pending farmer approvals</p>';
+                    return;
+                }
+
+                container.innerHTML = kycData.map(kyc => `
+                    <div class="border rounded-lg p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold">New Farmer Registration</h3>
+                            <span class="text-sm text-gray-500">Registered: ${new Date(kyc.registration_date).toLocaleDateString()}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Farmer Details -->
+                            <div class="space-y-3">
+                                <h4 class="font-semibold">Farmer Details</h4>
+                                <p><strong>Name:</strong> ${kyc.user_name}</p>
+                                <p><strong>Email:</strong> ${kyc.user_email}</p>
+                                <p><strong>Phone:</strong> ${kyc.user_phone}</p>
+                            </div>
+
+                            <!-- Farm Details -->
+                            <div class="space-y-3">
+                                <h4 class="font-semibold">Farm Details</h4>
+                                <p><strong>Fruit ID:</strong> ${kyc.fruit_id}</p>
+                                <p><strong>Location:</strong> ${kyc.fruit_data.farm_location}</p>
+                                <p><strong>Certification:</strong> ${kyc.fruit_data.certification_type}</p>
+                            </div>
+                        </div>
+
+                        <!-- Document Details -->
+                        <div class="mt-4">
+                            <h4 class="font-semibold mb-2">KYC Documents</h4>
+                            <p><strong>Document Type:</strong> ${kyc.document_type}</p>
+                            <p><strong>Document Number:</strong> ${kyc.document_number}</p>
+                            <div class="mt-2">
+                                <img src="${kyc.document_image}" alt="KYC Document" 
+                                     class="max-w-md h-auto rounded border">
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-4 mt-6">
+                            <button onclick="adminDashboard.approveFarmer(${kyc.id})"
+                                    class="flex-1 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600">
+                                <i class="fas fa-check mr-2"></i>Approve Farmer
+                            </button>
+                            <button onclick="adminDashboard.rejectFarmer(${kyc.id})"
+                                    class="flex-1 bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600">
+                                <i class="fas fa-times mr-2"></i>Reject
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            async approveFarmer(kycId) {
+                try {
+                    const response = await fetch(`/admin/approve-farmer/${kycId}`, {
+                        method: 'POST'
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.showNotification('Farmer approved successfully');
+                        this.loadPendingKYC();
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.showNotification('Error approving farmer', 'error');
+                }
+            }
+            
+            async rejectKYC(kycId) {
+                const reason = prompt('Please enter rejection reason:');
+                if (!reason) return;
+
+                try {
+                    const response = await fetch(`/admin/reject-kyc/${kycId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        this.showNotification('KYC rejected');
+                        this.loadPendingKYC();
+                    }
+                } catch (error) {
+                    console.error('Error rejecting KYC:', error);
+                    this.showError('Failed to reject KYC');
+                }
+            }
+
+            setupFilters() {
+                document.getElementById('farmerFilter').addEventListener('change', () => {
+                    this.loadRegisteredFarmers();
+                });
+            }
+
+            async loadRegisteredFarmers() {
+                try {
+                    const response = await fetch('/get_registered_farmers');
+                    const farmers = await response.json();
+                    const filter = document.getElementById('farmerFilter').value;
+                    
+                    let filtered = farmers;
+                    if (filter === 'verified') {
+                        filtered = farmers.filter(f => f.is_verified);
+                    } else if (filter === 'unverified') {
+                        filtered = farmers.filter(f => !f.is_verified);
+                    }
+                    
+                    this.displayRegisteredFarmers(filtered);
+                } catch (error) {
+                    console.error('Error loading farmers:', error);
+                    this.showError('Failed to load registered farmers');
+                }
+            }
+
+            displayRegisteredFarmers(farmers) {
+                const container = document.getElementById('registeredFarmers');
+                if (!farmers || farmers.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No registered farmers found</p>';
+                    return;
+                }
+
+                container.innerHTML = farmers.map(farmer => `
+                    <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3">
+                                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(farmer.name)}&background=random" 
+                                         alt="${farmer.name}" 
+                                         class="w-12 h-12 rounded-full">
+                                    <div>
+                                        <h3 class="font-semibold text-lg">${farmer.name}</h3>
+                                        <p class="text-gray-600">${farmer.email}</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3 space-y-1 text-sm text-gray-600">
+                                    <p><i class="fas fa-phone mr-2"></i>${farmer.phone}</p>
+                                    <p><i class="fas fa-calendar mr-2"></i>Joined: ${new Date(farmer.created_at).toLocaleDateString()}</p>
+                                </div>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <span class="px-3 py-1 rounded-full text-sm ${farmer.is_verified ? 
+                                        'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                        <i class="fas ${farmer.is_verified ? 'fa-check-circle' : 'fa-clock'} mr-1"></i>
+                                        ${farmer.is_verified ? 'Verified' : 'Pending Verification'}
+                                    </span>
+                                    <span class="px-3 py-1 rounded-full text-sm ${farmer.is_approved ? 
+                                        'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'}">
+                                        ${farmer.is_approved ? 'Approved' : 'Not Approved'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
             }
         }
 

@@ -3,551 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KisanSetu - KYC Verification</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
-        
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-image: url('/static/images/bgi.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-        
-        .container {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            padding: 60px;
-            border-radius: 12px;
-            box-shadow: 0 6px 15px rgba(230, 134, 8, 0.917);
-            width: 500px;
-            text-align: left;
-            margin: 20px auto;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin: 20px 0;
-        }
-
-        .form-section {
-            background: rgba(255, 255, 255, 0.15);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        .full-width {
-            grid-column: 1 / -1;
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 22px;
-        }
-        h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #333;
-        }
-        label {
-            display: block;
-            font-size: 20px;
-            margin-top: 12px;
-            font-weight: bold;
-            opacity: 0.8;
-            text-align: left;
-        }
-        input, select {
-            width: calc(100% - 24px); /* Adjust for padding */
-            padding: 8px 12px;
-            margin-top: 5px;
-            border: 1px solid rgba(0, 0, 0, 0.5);
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            color: #000;
-            outline: none;
-            font-size: 13px;
-        }
-        button {
-            background: #27ae60;
-            color: #fff;
-            border: none;
-            padding: 12px;
-            margin-top: 15px;
-            width: 30%;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .hidden {
-            display: none;
-        }
-        .radio-group {
-            display: flex;
-            gap: 20px;
-            margin: 10px 0;
-        }
-        .checkbox-container {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            text-align: left;
-        }
-
-        .checkbox-group {
-            margin: 5px 0;
-        }
-
-        .checkbox-group label {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            margin: 8px 0;
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            margin: 0;
-            width: 16px;
-            height: 16px;
-        }
-
-        .checkbox-group span {
-            flex: 1;
-        }
-        .otp-buttons {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        .fid-link {
-            display: block;
-            font-size: 12px;
-            color: #2980b9;
-            text-decoration: underline;
-            cursor: pointer;
-            margin-top: 5px;
-        }
-        .document-upload {
-            margin-top: 20px;
-            padding-right: 10px;
-        }
-        .document-section {
-            margin-top: 15px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-        }
-        .submit-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-            width: 100%;
-        }
-        button[type="submit"] {
-            width: 200px;
-            margin: 0 auto;
-        }
-        .validation-message {
-            color: #dc3545;
-            font-size: 12px;
-            margin-top: 5px;
-            min-height: 15px;
-        }
-        .document-id-container {
-            position: relative;
-            margin-bottom: 15px;
-        }
-        .file-upload-container {
-            margin-top: 15px;
-        }
-
-        .file-upload-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px dashed rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 13px;
-        }
-
-        .file-upload-label:hover {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: #27ae60;
-        }
-
-        .file-upload-label span {
-            font-size: 14px;
-            color: #333;
-        }
-
-        .file-upload-input {
-            display: none;
-        }
-
-        .file-name {
-            margin-top: 8px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .upload-icon {
-            font-size: 20px;
-            color: #27ae60;
-        }
-
-        .modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            text-align: center;
-            display: none;
-        }
-
-        .modal.show {
-            display: block;
-            animation: fadeIn 0.3s;
-        }
-
-        .modal h3 {
-            color: #27ae60;
-            margin-bottom: 15px;
-        }
-
-        .modal button {
-            margin-top: 20px;
-            width: 100px;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-    </style>
+    <title>KYC Verification - KisanSetu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body>
-    <div class="container">
-        <h2>KisanSetu - KYC Verification</h2>
-        <form id="kycForm">
-            <label>Phone Number (OTP Verification)</label>
-            <input type="text" id="phone" placeholder="Enter Phone Number" required>
-            <div class="otp-buttons">
-                <button type="button" onclick="sendOTP()">Get OTP</button>
-                <button type="button" id="resendOtpBtn" class="hidden" onclick="resendOTP()">Resend</button>
-            </div>
-            <p id="otpMessage" class="hidden">OTP Sent</p>
-            <input type="text" id="otp" placeholder="Enter OTP" class="hidden" required>
-            <button type="button" id="verifyOtpBtn" class="hidden" onclick="verifyOTP()">Verify OTP</button>
-            <p id="otpStatus"></p>
-            
-            <input type="text" id="farmerId" placeholder="Enter Farmer ID" class="hidden" required>
-            <a href="https://fruitspmk.karnataka.gov.in/MISReport/GetDetailsByAadhaar.aspx" target="_blank" id="fidLink" class="fid-link hidden">Know my FID</a>
-            <button type="button" id="fetchDataBtn" class="hidden" onclick="fetchFarmerData()">Proceed</button>
-            
-            <div id="farmerDetails" class="hidden">
-                <label>Name</label>
-                <input type="text" id="name" readonly>
-                <label>Father's Name</label>
-                <input type="text" id="fatherName" readonly>
-                <label>Land Size</label>
-                <input type="text" id="landSize" readonly>
-                <label>Soil Type</label>
-                <input type="text" id="soilType" readonly>
-            </div>
-            
-            <div id="addressAndDocuments" class="hidden">
-                <div class="form-section">
-                    <h3>Address Details</h3>
-                    <label>Country</label>
-                    <select id="country" required>
-                        <option value="">Select Country</option>
-                        <option value="India">India</option>
-                    </select>
-                    <label>State</label>
-                    <input type="text" id="state" required>
-                    <label>District</label>
-                    <input type="text" id="district" required>
-                    <label>City/Village</label>
-                    <input type="text" id="city" required>
+<body class="bg-[#FAF3E0] min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h1 class="text-2xl font-bold text-center mb-8">KYC Verification</h1>
+
+                <!-- Progress Steps -->
+                <div class="flex justify-between items-center mb-8">
+                    <div id="step1" class="flex flex-col items-center">
+                        <div class="w-8 h-8 bg-[#800000] text-white rounded-full flex items-center justify-center mb-2">1</div>
+                        <span class="text-sm">Fruit ID</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-200 mx-2" id="line1"></div>
+                    <div id="step2" class="flex flex-col items-center">
+                        <div class="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center mb-2">2</div>
+                        <span class="text-sm">Documents</span>
+                    </div>
                 </div>
 
-                <div class="document-section">
-                    <h3>Document Details</h3>
-                    <div class="radio-group">
-                        <label>
-                            <input type="radio" name="docType" value="aadhaar" onchange="validateForm()">
-                            Aadhaar Card
-                        </label>
-                        <label>
-                            <input type="radio" name="docType" value="pan" onchange="validateForm()">
-                            PAN Card
-                        </label>
-                    </div>
-                    <div class="document-upload">
-                        <label>Document Number</label>
-                        <div class="document-id-container">
-                            <input type="text" id="documentId" placeholder="Select document type first" 
-                                   oninput="validateDocumentId(this.value)" disabled>
-                            <div id="docValidationMsg" class="validation-message"></div>
-                        </div>
-                        <div class="file-upload-container">
-                            <label>Upload Document</label>
-                            <label for="uploadFile" class="file-upload-label">
-                                <span class="upload-icon">📎</span>
-                                <span>Choose a file or drag it here</span>
-                            </label>
-                            <input type="file" id="uploadFile" class="file-upload-input" 
-                                   accept=".jpg,.pdf" onchange="handleFileSelect(this)">
-                            <div class="file-name" id="fileName"></div>
-                            <small>Supported: JPG/PDF, max 100KB</small>
+                <!-- Step 1: Fruit ID -->
+                <div id="fruitIdForm" class="space-y-4">
+                    <div>
+                        <label class="block font-medium mb-2">Enter Fruit ID</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="fruitId" 
+                                   class="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-[#800000] focus:border-[#800000]"
+                                   placeholder="Enter your Fruit ID">
+                            <button onclick="verifyFruitId()" 
+                                    class="bg-[#800000] text-white px-4 py-2 rounded-lg hover:bg-[#B22222] transition-colors">
+                                <span id="verifyBtnText">Verify</span>
+                                <i id="verifySpinner" class="fas fa-spinner fa-spin hidden"></i>
+                            </button>
                         </div>
                     </div>
-
-                <div class="checkbox-container">
-                    <div class="checkbox-group">
-                        <label>
-                            <input type="checkbox" id="consent1" onchange="validateForm()">
-                            I agree to share my KYC details for verification
-                        </label>
-                        <label>
-                            <input type="checkbox" id="consent2" onchange="validateForm()">
-                            I confirm that all information provided is accurate
-                        </label>
+                    
+                    <!-- Add Fruit Details Section -->
+                    <div id="fruitDetails" class="hidden space-y-4 p-4 bg-gray-50 rounded-lg">
+                        <h3 class="font-semibold text-lg">Farm Details</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm text-gray-600">Farm Size</label>
+                                <p id="farmSize" class="font-medium"></p>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-600">Location</label>
+                                <p id="farmLocation" class="font-medium"></p>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-600">Soil Type</label>
+                                <p id="soilType" class="font-medium"></p>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-600">Irrigation Type</label>
+                                <p id="irrigationType" class="font-medium"></p>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Certification</label>
+                            <p id="certification" class="font-medium"></p>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Owner Details</label>
+                            <p id="ownerDetails" class="font-medium"></p>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Registration Authority</label>
+                            <p id="authority" class="font-medium"></p>
+                        </div>
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="showDocumentForm()" 
+                                    class="bg-[#4CAF50] text-white px-6 py-2 rounded-lg hover:bg-[#388E3C] transition-colors">
+                                Confirm & Continue
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="submit-container">
-                    <button type="submit" id="submitBtn" disabled>Submit</button>
+                <!-- Step 2: Documents -->
+                <div id="documentForm" class="space-y-4 hidden">
+                    <div>
+                        <label class="block font-medium mb-2">Document Type</label>
+                        <select id="documentType" 
+                                class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#4CAF50]">
+                            <option value="">Select Document Type</option>
+                            <option value="aadhar">Aadhar Card</option>
+                            <option value="pan">PAN Card</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-2">Document Number</label>
+                        <input type="text" id="documentNumber" 
+                               class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#4CAF50]">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-2">Upload Document</label>
+                        <input type="file" id="documentImage" 
+                               class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#4CAF50]"
+                               accept="image/*">
+                    </div>
+                    <div class="flex justify-between">
+                        <button onclick="prevStep(2)" 
+                                class="px-6 py-2 border rounded-lg hover:bg-gray-100">
+                            Back
+                        </button>
+                        <button onclick="submitKYC()" 
+                                class="px-6 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#388E3C]">
+                            Submit KYC
+                        </button>
+                    </div>
                 </div>
             </div>
-        </form>
-    </div>
-
-    <div id="successModal" class="modal">
-        <h3>✅ Success!</h3>
-        <p>Your KYC verification has been submitted successfully.</p>
-        <button type="button" onclick="closeModal()">OK</button>
+        </div>
     </div>
 
     <script>
-        const DUMMY_DATA = {
-            otpValue: '123456',
-            farmers: {
-                'F123': {
-                    name: 'Raj Kumar',
-                    fatherName: 'Mohan Kumar',
-                    landSize: '15 acres',
-                    soilType: 'Black Cotton Soil'
-                },
-                'F456': {
-                    name: 'Suresh Patel',
-                    fatherName: 'Ramesh Patel',
-                    landSize: '8 acres',
-                    soilType: 'Red Soil'
-                }
-            },
-            validDocuments: {
-                aadhaar: /^\d{12}$/,
-                pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/
-            }
-        };
-
         let currentStep = 1;
-        const totalSteps = 4;
-
-        function showStep(step) {
-            const sections = ['otp', 'verifyOtpBtn', 'resendOtpBtn', 'otpMessage', 'farmerId', 'fidLink', 'fetchDataBtn', 
-                              'farmerDetails', 'addressAndDocuments', 'submitBtn'];
-            sections.forEach(id => document.getElementById(id).classList.add('hidden'));
-
-            switch(step) {
-                case 1:
-                    break;
-                case 2:
-                    document.getElementById('otpMessage').classList.remove('hidden');
-                    document.getElementById('otp').classList.remove('hidden');
-                    document.getElementById('verifyOtpBtn').classList.remove('hidden');
-                    document.getElementById('resendOtpBtn').classList.remove('hidden');
-                    break;
-                case 3:
-                    document.getElementById('farmerId').classList.remove('hidden');
-                    document.getElementById('fidLink').classList.remove('hidden');
-                    document.getElementById('fetchDataBtn').classList.remove('hidden');
-                    break;
-                case 4:
-                    document.getElementById('farmerDetails').classList.remove('hidden');
-                    document.getElementById('addressAndDocuments').classList.remove('hidden');
-                    document.getElementById('submitBtn').classList.remove('hidden');
-                    break;
+        let farmData = null; // Store fetched farm data
+        
+        async function verifyFruitId() {
+            const fruitId = document.getElementById('fruitId').value;
+            if (!fruitId) {
+                alert('Please enter Fruit ID');
+                return;
             }
-        }
 
-        function sendOTP() {
-            const phone = document.getElementById('phone').value;
-            if (/^[6-9]\d{9}$/.test(phone)) {
-                document.getElementById('otpMessage').classList.remove('hidden');
-                document.getElementById('otpMessage').textContent = `OTP sent: ${DUMMY_DATA.otpValue}`;
-                currentStep = 2;
-                showStep(currentStep);
-            } else {
-                alert('Please enter a valid 10-digit phone number');
-            }
-        }
+            // Show loading state
+            const btn = document.querySelector('button[onclick="verifyFruitId()"]');
+            const btnText = document.getElementById('verifyBtnText');
+            const spinner = document.getElementById('verifySpinner');
+            btn.disabled = true;
+            btnText.classList.add('hidden');
+            spinner.classList.remove('hidden');
 
-        function resendOTP() {
-            document.getElementById('otpMessage').textContent = `OTP resent: ${DUMMY_DATA.otpValue}`;
-        }
-
-        function verifyOTP() {
-            const enteredOTP = document.getElementById('otp').value;
-            if (enteredOTP === DUMMY_DATA.otpValue) {
-                document.getElementById('otpStatus').textContent = '✅ OTP Verified Successfully';
-                document.getElementById('otpStatus').style.color = 'green';
-                currentStep = 3;
-                showStep(currentStep);
-            } else {
-                document.getElementById('otpStatus').textContent = '❌ Invalid OTP';
-                document.getElementById('otpStatus').style.color = 'red';
-            }
-        }
-
-        function fetchFarmerData() {
-            const farmerId = document.getElementById('farmerId').value;
-            const farmerData = DUMMY_DATA.farmers[farmerId];
-            if (farmerData) {
-                document.getElementById('name').value = farmerData.name;
-                document.getElementById('fatherName').value = farmerData.fatherName;
-                document.getElementById('landSize').value = farmerData.landSize;
-                document.getElementById('soilType').value = farmerData.soilType;
-                currentStep = 4;
-                showStep(currentStep);
-            } else {
-                alert('Farmer ID not found. Try F123 or F456');
-            }
-        }
-
-        function validateDocumentId(value) {
-            const docType = document.querySelector('input[name="docType"]:checked')?.value;
-            const documentId = document.getElementById('documentId');
-            const validationMsg = document.getElementById('docValidationMsg');
-            let isValid = false;
-
-            if (docType === 'aadhaar') {
-                documentId.value = value.replace(/[^0-9]/g, '').slice(0, 12);
-                if (documentId.value.length === 12) {
-                    isValid = true;
-                    validationMsg.textContent = '';
+            try {
+                const response = await fetch(`/verify_fruit_id/${fruitId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store farm data for submission
+                    farmData = data.data;
+                    
+                    // Display fruit details
+                    displayFruitDetails(farmData);
+                    document.getElementById('fruitDetails').classList.remove('hidden');
                 } else {
-                    validationMsg.textContent = 'Aadhaar number must be 12 digits';
+                    alert(data.message || 'Invalid Fruit ID');
+                    document.getElementById('fruitDetails').classList.add('hidden');
                 }
-            } else if (docType === 'pan') {
-                documentId.value = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
-                if (/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(documentId.value)) {
-                    isValid = true;
-                    validationMsg.textContent = '';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to verify Fruit ID');
+            } finally {
+                // Reset button state
+                btn.disabled = false;
+                btnText.classList.remove('hidden');
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function displayFruitDetails(data) {
+            document.getElementById('farmSize').textContent = `${data.farm_size} acres`;
+            document.getElementById('farmLocation').textContent = data.farm_location;
+            document.getElementById('soilType').textContent = data.soil_type || 'Not specified';
+            document.getElementById('irrigationType').textContent = data.irrigation_type || 'Not specified';
+            document.getElementById('certification').textContent = data.certification_type || 'Not specified';
+            document.getElementById('ownerDetails').textContent = `${data.owner_name} (${data.owner_contact})`;
+            document.getElementById('authority').textContent = data.registration_authority;
+        }
+
+        function showDocumentForm() {
+            if (!farmData) {
+                alert('Please verify Fruit ID first');
+                return;
+            }
+
+            // Update progress indicator
+            document.getElementById('step1').querySelector('div').classList.add('bg-green-500');
+            document.getElementById('step2').querySelector('div').classList.remove('bg-gray-200');
+            document.getElementById('step2').querySelector('div').classList.add('bg-[#800000]');
+            document.getElementById('step2').querySelector('div').classList.add('text-white');
+            document.getElementById('line1').classList.add('bg-green-500');
+
+            // Hide fruit ID form and show document form
+            document.getElementById('fruitIdForm').classList.add('hidden');
+            document.getElementById('documentForm').classList.remove('hidden');
+        }
+
+        async function submitKYC() {
+            const documentType = document.getElementById('documentType').value;
+            const documentNumber = document.getElementById('documentNumber').value;
+            const documentImage = document.getElementById('documentImage').files[0];
+
+            if (!documentType || !documentNumber || !documentImage) {
+                alert('Please fill all fields and upload document');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('fruit_id', document.getElementById('fruitId').value);
+            formData.append('city', farmData.farm_location.split(',')[0].trim());
+            formData.append('state', farmData.farm_location.split(',')[1].trim());
+            formData.append('country', 'India'); // Default to India
+            formData.append('document_type', documentType);
+            formData.append('document_number', documentNumber);
+            formData.append('document_image', documentImage);
+
+            try {
+                const response = await fetch('/submit_kyc', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('KYC application submitted successfully! Please wait for admin approval. You will receive an email notification once your application is processed.');
+                    window.location.href = '/login';
                 } else {
-                    validationMsg.textContent = 'PAN format: ABCDE1234F';
+                    throw new Error(result.error || 'Failed to submit KYC');
                 }
-            }
-
-            return isValid;
-        }
-
-        function handleDocumentTypeChange() {
-            const documentId = document.getElementById('documentId');
-            const docType = document.querySelector('input[name="docType"]:checked')?.value;
-            
-            documentId.value = '';
-            document.getElementById('docValidationMsg').textContent = '';
-            
-            if (docType) {
-                documentId.disabled = false;
-                documentId.placeholder = docType === 'aadhaar' ? 
-                    'Enter 12 digit Aadhaar number' : 
-                    'Enter PAN number (ABCDE1234F)';
-            } else {
-                documentId.disabled = true;
-                documentId.placeholder = 'Select document type first';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to submit KYC. Please try again.');
             }
         }
-
-        function validateForm() {
-            const docType = document.querySelector('input[name="docType"]:checked')?.value;
-            const documentId = document.getElementById('documentId').value;
-            const uploadFile = document.getElementById('uploadFile').files[0];
-            const consent1 = document.getElementById('consent1').checked;
-            const consent2 = document.getElementById('consent2').checked;
-            
-            let isValidDoc = docType && documentId && validateDocumentId(documentId);
-            let isValidFile = uploadFile && uploadFile.size <= 102400;
-            
-            document.getElementById('submitBtn').disabled = !(isValidDoc && isValidFile && consent1 && consent2);
-        }
-
-        function handleFileSelect(input) {
-            const fileName = document.getElementById('fileName');
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                fileName.textContent = `Selected: ${file.name}`;
-                if (file.size > 102400) {
-                    fileName.textContent += ' (File size exceeds 100KB)';
-                    fileName.style.color = '#dc3545';
-                } else {
-                    fileName.style.color = '#27ae60';
-                }
-            } else {
-                fileName.textContent = '';
-            }
-            validateForm();
-        }
-
-        document.querySelectorAll('input[name="docType"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                handleDocumentTypeChange();
-                validateForm();
-            });
-        });
-
-        document.getElementById('kycForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (!document.getElementById('submitBtn').disabled) {
-                document.getElementById('successModal').classList.add('show');
-            }
-        });
-
-        function closeModal() {
-            document.getElementById('successModal').classList.remove('show');
-            location.reload();
-        }
-
-        showStep(1);
     </script>
 </body>
 </html>

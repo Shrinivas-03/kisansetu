@@ -152,6 +152,21 @@ class Cart(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+# Add KYC Model after other models
+class KYC(db.Model):
+    __tablename__ = 'kyc'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    fruit_id = db.Column(db.String(50), nullable=False)
+    city = db.Column(db.String(100), nullable=False)
+    state = db.Column(db.String(100), nullable=False)
+    country = db.Column(db.String(100), nullable=False)
+    document_type = db.Column(db.String(20), nullable=False)  # 'aadhar' or 'pan'
+    document_number = db.Column(db.String(20), nullable=False)
+    document_image = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -255,26 +270,13 @@ def otp_verification():
             user.otp = None  # Clear OTP after verification
             db.session.commit()
             session['user_id'] = user.id
-            flash('Account verified successfully!')
 
-            # Send admin notification for farmer registration
+            # Different messages for farmer and customer
             if user.user_type == 'farmer':
-                try:
-                    msg = Message('New Farmer Registration - Action Required',
-                                recipients=['ainewshub89@gmail.com'])  # Replace with admin email
-                    msg.body = f'''New farmer registration requires approval:
-                    Name: {user.name}
-                    Email: {user.email}
-                    Phone: {user.phone}
-                    
-                    Please review and approve from admin dashboard.
-                    '''
-                    mail.send(msg)
-                    flash('Your account has been verified. Please wait for admin approval to login.')
-                except Exception as e:
-                    print(f"Error sending admin notification: {e}")
-                return redirect(url_for('login'))
+                flash('Account verified! Your KYC approval application has been submitted.')
+                return redirect(url_for('kyc_verification'))
             else:
+                flash('Account verified successfully!')
                 return redirect(url_for('customer_dashboard'))
 
         flash('Invalid OTP. Please try again.')
@@ -1096,6 +1098,45 @@ def update_profile_picture():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/verify_fruit_id/<fruit_id>')
+def verify_fruit_id(fruit_id):
+    try:
+        # Query the fruit table
+        with db.engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT farm_size, farm_location, soil_type, irrigation_type, 
+                       certification_type, owner_name, owner_contact, 
+                       registration_authority, is_active 
+                FROM fruit 
+                WHERE id = :fruit_id
+            """), {"fruit_id": fruit_id})
+            fruit = result.fetchone()
+            
+            if fruit and fruit.is_active:
+                return jsonify({
+                    'success': True,
+                    'data': {
+                        'farm_size': float(fruit.farm_size),
+                        'farm_location': fruit.farm_location,
+                        'soil_type': fruit.soil_type,
+                        'irrigation_type': fruit.irrigation_type,
+                        'certification_type': fruit.certification_type,
+                        'owner_name': fruit.owner_name,
+                        'owner_contact': fruit.owner_contact,
+                        'registration_authority': fruit.registration_authority
+                    }
+                })
+            return jsonify({
+                'success': False, 
+                'message': 'Invalid or inactive Fruit ID'
+            })
+    except Exception as e:
+        print(f"Error verifying fruit ID: {e}")
+        return jsonify({
+            'success': False, 
+            'error': 'Failed to verify Fruit ID'
+        }), 500
+
 # Cart Routes
 @app.route('/cart/add', methods=['POST'])
 def add_to_cart():
@@ -1131,7 +1172,6 @@ def add_to_cart():
         print(f"Error adding to cart: {e}")
         return jsonify({'error': 'Failed to add product to cart'}), 500
 
-
 @app.route('/cart/update', methods=['POST'])
 def update_cart():
     if 'user_id' not in session:
@@ -1158,7 +1198,6 @@ def update_cart():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-
 @app.route('/cart/remove/<int:product_id>', methods=['DELETE'])
 def remove_from_cart(product_id):
     if 'user_id' not in session:
@@ -1175,7 +1214,6 @@ def remove_from_cart(product_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/cart/items', methods=['GET'])
 def get_cart_items():
@@ -1293,6 +1331,233 @@ def reapply_product(product_id):
     except Exception as e:
         db.session.rollback()
         print(f"Error reapplying product: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# Add KYC submission route
+@app.route('/submit_kyc', methods=['POST'])
+def submit_kyc():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    try:
+        # Handle document upload
+        if 'document_image' not in request.files:
+            return jsonify({'error': 'No document uploaded'}), 400
+            
+        file = request.files['document_image']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+            
+        if file and allowed_file(file.filename):
+            # Create kyc_docs directory if it doesn't exist
+            upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'kyc_docs')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            # Generate unique filename
+            filename = secure_filename(f"kyc_{session['user_id']}_{int(time.time())}.{file.filename.rsplit('.', 1)[1].lower()}")
+            filepath = os.path.join(upload_folder, filename)
+            
+            # Save file
+            file.save(filepath)
+            
+            # Create KYC record
+            kyc = KYC(
+                user_id=session['user_id'],
+                fruit_id=request.form['fruit_id'],
+                city=request.form['city'],
+                state=request.form['state'],
+                country=request.form['country'],
+                document_type=request.form['document_type'],
+                document_number=request.form['document_number'],
+                document_image=f"/static/product_images/kyc_docs/{filename}"
+            )
+            
+            db.session.add(kyc)
+            db.session.commit()
+
+            # Send confirmation email to farmer
+            user = User.query.get(session['user_id'])
+            try:
+                msg = Message('KYC Application Submitted - KisanSetu',
+                             recipients=[user.email])
+                msg.body = f'''
+                Dear {user.name},
+
+                Your KYC application has been submitted successfully!
+
+                Application Details:
+                - Document Type: {request.form['document_type']}
+                - Fruit ID: {request.form['fruit_id']}
+                - Submission Date: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}
+
+                Your application is now pending admin approval. You will receive another email 
+                once your application is processed.
+
+                Thank you for choosing KisanSetu!
+
+                Best regards,
+                KisanSetu Team
+                '''
+                mail.send(msg)
+            except Exception as e:
+                print(f"Error sending confirmation email: {e}")
+
+            # Send email to admin
+            try:
+                msg = Message('New Farmer KYC Submission - Action Required',
+                            recipients=['ainewshub89@gmail.com'])  # Replace with admin email
+                msg.body = f'''
+                New farmer KYC submission requires approval:
+                Name: {user.name}
+                Email: {user.email}
+                Phone: {user.phone}
+                Fruit ID: {request.form['fruit_id']}
+                Document Type: {request.form['document_type']}
+                
+                Please review the documents in the admin dashboard.
+                '''
+                mail.send(msg)
+            except Exception as e:
+                print(f"Error sending admin notification: {e}")
+            
+            return jsonify({'success': True, 'message': 'KYC submitted successfully'})
+            
+        return jsonify({'error': 'Invalid file type'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Add KYC verification route
+@app.route('/kyc-verification')
+def kyc_verification():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('kyc.html')
+
+@app.route('/admin/pending-kyc')
+@admin_required
+def get_pending_kyc():
+    try:
+        # Join KYC with User and get pending verifications where user is not approved
+        kyc_data = db.session.query(KYC, User)\
+            .join(User)\
+            .filter(KYC.status == 'pending')\
+            .filter(User.is_approved == False)\
+            .filter(User.user_type == 'farmer')\
+            .all()
+        
+        result = []
+        for kyc, user in kyc_data:
+            # Get fruit details
+            with db.engine.connect() as conn:
+                fruit_result = conn.execute(text("""
+                    SELECT * FROM fruit WHERE id = :fruit_id
+                """), {"fruit_id": kyc.fruit_id}).fetchone()
+                
+                if fruit_result:
+                    result.append({
+                        'id': kyc.id,
+                        'user_id': user.id,
+                        'fruit_id': kyc.fruit_id,
+                        'user_name': user.name,
+                        'user_email': user.email,
+                        'user_phone': user.phone,
+                        'registration_date': user.created_at.isoformat(),
+                        'document_type': kyc.document_type,
+                        'document_number': kyc.document_number,
+                        'document_image': kyc.document_image,
+                        'fruit_data': {
+                            'farm_location': fruit_result.farm_location,
+                            'owner_name': fruit_result.owner_name,
+                            'owner_contact': fruit_result.owner_contact,
+                            'certification_type': fruit_result.certification_type
+                        }
+                    })
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"Error fetching pending approvals: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/approve-farmer/<int:kyc_id>', methods=['POST'])
+@admin_required
+def approve_farmer_kyc(kyc_id):
+    try:
+        kyc = KYC.query.get_or_404(kyc_id)
+        user = User.query.get(kyc.user_id)
+        
+        # Update both KYC and farmer status
+        kyc.status = 'approved'
+        user.is_approved = True
+        db.session.commit()
+        
+        # Send combined approval email
+        try:
+            msg = Message('Farmer Registration & KYC Approved - KisanSetu',
+                         recipients=[user.email])
+            msg.body = f'''
+            Dear {user.name},
+
+            Congratulations! Your farmer registration and KYC verification have been approved.
+            You can now login to KisanSetu and start listing your products.
+
+            Your Details:
+            Fruit ID: {kyc.fruit_id}
+            Document Type: {kyc.document_type}
+            Document Number: {kyc.document_number}
+
+            Thank you for choosing KisanSetu!
+            '''
+            mail.send(msg)
+        except Exception as e:
+            print(f"Error sending approval email: {e}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Farmer registration and KYC approved successfully'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/reject-kyc/<int:kyc_id>', methods=['POST'])
+@admin_required
+def reject_kyc(kyc_id):
+    try:
+        data = request.json
+        kyc = KYC.query.get_or_404(kyc_id)
+        user = User.query.get(kyc.user_id)
+        
+        # Update KYC status
+        kyc.status = 'rejected'
+        db.session.commit()
+        
+        # Send rejection email
+        try:
+            msg = Message('KYC Verification Rejected - KisanSetu',
+                         recipients=[user.email])
+            msg.body = f'''
+            Dear {user.name},
+
+            Your KYC verification has been rejected for the following reason:
+            {data.get('reason', 'No reason provided')}
+
+            Please update your KYC information and try again.
+
+            If you have any questions, please contact support.
+
+            Thank you for your understanding.
+            '''
+            mail.send(msg)
+        except Exception as e:
+            print(f"Error sending rejection email: {e}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'KYC rejected successfully'
+        })
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
