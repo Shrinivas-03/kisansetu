@@ -35,7 +35,7 @@
                     <button id="profileButton" 
                             onclick="toggleProfileMenu()"
                             class="text-white flex items-center gap-2 hover:text-gray-200 focus:outline-none">
-                        <img src="https://ui-avatars.com/api/?name={{ session.get('user_name', '') }}&background=random" 
+                        <img src="{{ session.get('user_profile_pic') }}" 
                              alt="Profile" 
                              class="w-8 h-8 rounded-full">
                         <span>{{ session.get('user_name', '') }}</span>
@@ -109,68 +109,18 @@
     </div>
 
     <script>
-        class CartManager {
-            constructor() {
-                this.loadCart();
-                updateWishlistCount();
-                setInterval(updateWishlistCount, 5000);
-            }
-
-            loadCart() {
-                const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
-                // Fetch product details for each cart item
-                Promise.all(cartItems.map(item => this.fetchProductDetails(item.id)))
-                    .then(products => {
-                        // Merge product details with cart items
-                        const itemsWithDetails = cartItems.map((item, index) => ({
-                            ...item,
-                            image_url: products[index]?.image_url || 'https://via.placeholder.com/80',
-                            description: products[index]?.description || '',
-                            category: products[index]?.category || ''
-                        }));
-                        this.displayCart(itemsWithDetails);
-                    })
-                    .catch(error => {
-                        console.error('Error loading cart items:', error);
-                        this.displayCart(cartItems);
-                    });
-            }
-
-            fetchProductDetails(productId) {
-                return fetch(`/get_approved_products`)
-                    .then(response => response.json())
-                    .then(products => products.find(p => p.id === productId));
-            }
-
-            addToCart(product) {
-                try {
-                    const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
-                    const existingItem = cartItems.find(item => item.id === product.id);
-                    
-                    if (existingItem) {
-                        existingItem.quantity += 1;
-                    } else {
-                        cartItems.push({
-                            id: product.id,
-                            name: product.name,
-                            price: product.price,
-                            quantity: 1,
-                            image_url: product.image_url
-                        });
-                    }
-                    
-                    localStorage.setItem('cart', JSON.stringify(cartItems));
-                    this.loadCart();
-                } catch (error) {
-                    console.error('Error adding to cart:', error);
+        async function loadCart() {
+            try {
+                const response = await fetch('/cart/items', { credentials: 'include' });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            }
+                const cartItems = await response.json();
 
-            displayCart(items) {
                 const container = document.getElementById('cartItems');
                 const summary = document.getElementById('cartSummary');
 
-                if (!items || items.length === 0) {
+                if (!cartItems || cartItems.length === 0) {
                     container.innerHTML = `
                         <div class="text-center py-8">
                             <i class="fas fa-shopping-cart text-gray-400 text-5xl mb-4"></i>
@@ -183,29 +133,27 @@
                     return;
                 }
 
-                container.innerHTML = items.map(item => `
+                container.innerHTML = cartItems.map(item => `
                     <div class="flex items-center justify-between border-b pb-4">
                         <div class="flex items-center space-x-4">
                             <img src="${item.image_url || 'https://via.placeholder.com/80'}" 
                                  alt="${item.name}"
-                                 class="w-20 h-20 object-cover rounded"
-                                 onerror="this.src='https://via.placeholder.com/80?text=${encodeURIComponent(item.name)}'">
+                                 class="w-20 h-20 object-cover rounded">
                             <div>
                                 <h3 class="font-semibold">${item.name}</h3>
                                 <p class="text-gray-600">₹${item.price}/kg</p>
-                                ${item.category ? `<p class="text-sm text-gray-500">Category: ${item.category}</p>` : ''}
                             </div>
                         </div>
                         <div class="flex items-center space-x-4">
                             <div class="flex items-center border rounded">
-                                <button onclick="cart.updateQuantity('${item.id}', ${item.quantity - 1})"
+                                <button onclick="updateCart(${item.product_id}, ${item.quantity - 1})"
                                         class="px-3 py-1 hover:bg-gray-100">-</button>
                                 <span class="px-4 py-1 border-x">${item.quantity}</span>
-                                <button onclick="cart.updateQuantity('${item.id}', ${item.quantity + 1})"
+                                <button onclick="updateCart(${item.product_id}, ${item.quantity + 1})"
                                         class="px-3 py-1 hover:bg-gray-100">+</button>
                             </div>
-                            <p class="font-semibold">₹${(item.price * item.quantity).toFixed(2)}</p>
-                            <button onclick="cart.removeItem('${item.id}')"
+                            <p class="font-semibold">₹${item.total_price.toFixed(2)}</p>
+                            <button onclick="removeFromCart(${item.product_id})"
                                     class="text-red-500 hover:text-red-700">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -213,64 +161,84 @@
                     </div>
                 `).join('');
 
-                const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const total = cartItems.reduce((sum, item) => sum + item.total_price, 0);
                 summary.innerHTML = `
                     <div class="flex justify-between items-center mb-4">
                         <span class="text-lg font-semibold">Total:</span>
                         <span class="text-2xl font-bold">₹${total.toFixed(2)}</span>
                     </div>
-                    <button onclick="cart.checkout()"
+                    <button onclick="checkout()"
                             class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors">
                         Proceed to Checkout
-                    </button>
-                `;
-            }
-
-            updateQuantity(productId, newQuantity) {
-                if (newQuantity < 1) {
-                    this.removeItem(productId);
-                    return;
-                }
-
-                const items = JSON.parse(localStorage.getItem('cart') || '[]');
-                const itemIndex = items.findIndex(item => item.id === productId);
-                if (itemIndex !== -1) {
-                    items[itemIndex].quantity = newQuantity;
-                    localStorage.setItem('cart', JSON.stringify(items));
-                    this.loadCart();
-                }
-            }
-
-            removeItem(productId) {
-                const items = JSON.parse(localStorage.getItem('cart') || '[]');
-                const filteredItems = items.filter(item => item.id !== productId);
-                localStorage.setItem('cart', JSON.stringify(filteredItems));
-                this.loadCart();
-            }
-
-            checkout() {
-                const items = JSON.parse(localStorage.getItem('cart') || '[]');
-                if (items.length === 0) {
-                    alert('Your cart is empty!');
-                    return;
-                }
-
-                // Store cart items for checkout page
-                localStorage.setItem('checkoutCart', JSON.stringify(items));
-                
-                // Calculate total
-                const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                localStorage.setItem('cartTotal', total);
-
-                // Redirect to checkout page
-                window.location.href = '/checkout';
+                    </button>`;
+            } catch (error) {
+                console.error('Error loading cart:', error);
+                const container = document.getElementById('cartItems');
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-red-500">Failed to load cart. Please try again later.</p>
+                    </div>`;
             }
         }
 
-        const cart = new CartManager();
+        async function updateCart(productId, quantity) {
+            if (quantity < 1) {
+                removeFromCart(productId);
+                return;
+            }
 
-        // Refresh cart every 5 seconds
-        setInterval(() => cart.loadCart(), 5000);
+            try {
+                const response = await fetch('/cart/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_id: productId, quantity })
+                });
+                const result = await response.json();
+                if (result.message) {
+                    loadCart();
+                }
+            } catch (error) {
+                console.error('Error updating cart:', error);
+            }
+        }
+
+        async function removeFromCart(productId) {
+            try {
+                const response = await fetch(`/cart/remove/${productId}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.message) {
+                    loadCart();
+                }
+            } catch (error) {
+                console.error('Error removing from cart:', error);
+            }
+        }
+
+        async function checkout() {
+            try {
+                const response = await fetch('/cart/items', { credentials: 'include' });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const cartItems = await response.json();
+
+                if (!cartItems || cartItems.length === 0) {
+                    alert('Your cart is empty. Please add items to proceed.');
+                    return;
+                }
+
+                // Save cart items to localStorage for checkout
+                localStorage.setItem('checkoutCart', JSON.stringify(cartItems));
+
+                // Navigate to the checkout page
+                window.location.href = '/checkout';
+            } catch (error) {
+                console.error('Error during checkout:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCart);
 
         // Add the menu toggle and logout functions
         function toggleMenu() {

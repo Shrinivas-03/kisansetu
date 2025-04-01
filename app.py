@@ -139,8 +139,18 @@ class Wishlist(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
-    user = db.relationship('User', backref=db.backref('wishlists', lazy=True))
-    product = db.relationship('Product', backref=db.backref('wishlists', lazy=True))
+    user = db.relationship('User', backref=db.backref('wishlists', lazy=True))  # Fixed missing parenthesis
+    product = db.relationship('Product', backref=db.backref('wishlists', lazy=True))  # Fixed missing parenthesis
+
+# Cart Model
+class Cart(db.Model):
+    __tablename__ = 'cart'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -296,7 +306,7 @@ def login():
             session['user_name'] = user.name
             session['user_email'] = user.email
             session['user_phone'] = user.phone
-
+            session['user_profile_pic'] = user.profile_pic or f"https://ui-avatars.com/api/?name={user.name}&background=random"
             # Redirect based on user type
             if user.user_type == 'farmer':
                 return redirect(url_for('farmer_dashboard'))
@@ -701,11 +711,12 @@ def get_farmer_products(farmer_id):
         'id': p.id,
         'name': p.name,
         'category': p.category,
-        'price': p.price,
+        'price': float(p.price),
         'stock': p.stock,
         'description': p.description,
         'image_url': p.image_url if p.image_url else f'https://via.placeholder.com/200x200?text={p.name}',
         'is_approved': p.is_approved,
+        'is_rejected': p.is_rejected,  # Add this field
         'created_at': p.created_at.isoformat()
     } for p in products])
 
@@ -785,9 +796,18 @@ def checkout():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    # Get user details for pre-filling the form
-    user = User.query.get(session['user_id'])
-    return render_template('checkout.html', user=user)
+    try:
+        # Get user details for pre-filling the form
+        user = User.query.get(session['user_id'])
+        if not user:
+            flash('User not found. Please log in again.')
+            return redirect(url_for('login'))
+        
+        return render_template('checkout.html', user=user)
+    except Exception as e:
+        print(f"Error loading checkout page: {e}")
+        flash('An error occurred while loading the checkout page. Please try again.')
+        return redirect(url_for('cart'))
 
 # Update the place_order route
 @app.route('/place_order', methods=['POST'])
@@ -854,35 +874,23 @@ def orders():
 def get_user_orders():
     if 'user_id' not in session:
         return jsonify({'error': 'Not logged in'}), 401
-        
+
     try:
         # Get status filter from query parameters
         status_filter = request.args.get('status', 'all')
-        
+
         # Base query
         query = Order.query.filter_by(user_id=session['user_id'])
-        
+
         # Apply status filter if not 'all'
         if status_filter != 'all':
             query = query.filter_by(status=status_filter)
-        
+
         # Get orders ordered by date
         orders = query.order_by(Order.order_date.desc()).all()
 
-        # Get all product IDs from orders
-        product_ids = set()
-        for order in orders:
-            for item in order.items:
-                product_ids.add(item.get('id'))
-
-        # Get product details including images
-        products = Product.query.filter(Product.id.in_(product_ids)).all()
-        product_details = {str(p.id): {
-            'image_url': p.image_url,
-            'description': p.description
-        } for p in products}
-
-        return jsonify([{
+        # Format orders for response
+        result = [{
             'id': order.id,
             'order_date': order.order_date.isoformat(),
             'total_amount': float(order.total_amount),
@@ -891,19 +899,17 @@ def get_user_orders():
             'payment_method': order.payment_method,
             'payment_status': order.payment_status,
             'delivery_details': order.delivery_details,
-            'items': [{
-                **item,
-                'image_url': product_details.get(str(item['id']), {}).get('image_url'),
-                'description': product_details.get(str(item['id']), {}).get('description')
-            } for item in order.items],
+            'items': order.items,
             'tracking_number': order.tracking_number,
             'delivery_date': order.delivery_date.isoformat() if order.delivery_date else None,
             'cancelled_date': order.cancelled_date.isoformat() if order.cancelled_date else None,
             'cancel_reason': order.cancel_reason
-        } for order in orders])
+        } for order in orders]
+
+        return jsonify(result)
     except Exception as e:
         print(f"Error fetching orders: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to load orders'}), 500
 
 @app.route('/cancel_order/<int:order_id>', methods=['POST'])
 def cancel_order(order_id):
@@ -1088,6 +1094,205 @@ def update_profile_picture():
     except Exception as e:
         print(f"Error updating profile picture: {e}")
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Cart Routes
+@app.route('/cart/add', methods=['POST'])
+def add_to_cart():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    try:
+        data = request.json
+        product_id = data.get('product_id')
+        quantity = data.get('quantity', 1)
+
+        # Validate product_id and quantity
+        if not product_id or quantity < 1:
+            return jsonify({'error': 'Invalid product ID or quantity'}), 400
+
+        # Check if product exists
+        product = Product.query.get(product_id)
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+
+        # Check if the product is already in the cart
+        cart_item = db.session.query(Cart).filter_by(user_id=session['user_id'], product_id=product_id).first()
+        if cart_item:
+            cart_item.quantity += quantity
+        else:
+            cart_item = Cart(user_id=session['user_id'], product_id=product_id, quantity=quantity)
+            db.session.add(cart_item)
+
+        db.session.commit()
+        return jsonify({'message': 'Product added to cart successfully'})
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error adding to cart: {e}")
+        return jsonify({'error': 'Failed to add product to cart'}), 500
+
+
+@app.route('/cart/update', methods=['POST'])
+def update_cart():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    try:
+        data = request.json
+        product_id = data.get('product_id')
+        quantity = data.get('quantity')
+
+        # Check if the cart item exists
+        cart_item = db.session.query(Cart).filter_by(user_id=session['user_id'], product_id=product_id).first()
+        if not cart_item:
+            return jsonify({'error': 'Cart item not found'}), 404
+
+        if quantity <= 0:
+            db.session.delete(cart_item)
+        else:
+            cart_item.quantity = quantity
+
+        db.session.commit()
+        return jsonify({'message': 'Cart updated successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/cart/remove/<int:product_id>', methods=['DELETE'])
+def remove_from_cart(product_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    try:
+        cart_item = db.session.query(Cart).filter_by(user_id=session['user_id'], product_id=product_id).first()
+        if not cart_item:
+            return jsonify({'error': 'Cart item not found'}), 404
+
+        db.session.delete(cart_item)
+        db.session.commit()
+        return jsonify({'message': 'Product removed from cart successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/cart/items', methods=['GET'])
+def get_cart_items():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    try:
+        cart_items = db.session.query(Cart, Product).join(Product, Cart.product_id == Product.id).filter(Cart.user_id == session['user_id']).all()
+        result = [{
+            'product_id': item.Product.id,
+            'name': item.Product.name,
+            'price': float(item.Product.price),
+            'quantity': item.Cart.quantity,
+            'image_url': item.Product.image_url,
+            'total_price': float(item.Product.price) * item.Cart.quantity
+        } for item in cart_items]
+
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get_farmer_sales_summary/<int:farmer_id>')
+def get_farmer_sales_summary(farmer_id):
+    try:
+        print(f"Debug: Processing sales summary for farmer {farmer_id}")
+        
+        # Get product count
+        product_count = Product.query.filter_by(farmer_id=farmer_id).count()
+        
+        # Get all orders and parse their items
+        orders = Order.query.all()
+        farmer_orders = []
+        total_earnings = 0
+
+        for order in orders:
+            items = order.items or []  # Ensure items is a list
+            farmer_items = []
+            order_total = 0
+
+            # Process each item in the order
+            for item in items:
+                # Check if this item belongs to the farmer
+                product = Product.query.get(item.get('product_id'))
+                if product and product.farmer_id == farmer_id:
+                    farmer_items.append(item)
+                    # Calculate item total
+                    quantity = int(item.get('quantity', 0))
+                    price = float(item.get('price', 0))
+                    order_total += quantity * price
+
+            # If order contains farmer's items, add to relevant lists
+            if farmer_items:
+                order_data = {
+                    'id': order.id,
+                    'total_amount': order_total,
+                    'status': order.status,
+                    'items': farmer_items
+                }
+                farmer_orders.append(order_data)
+                
+                # Add to total earnings if order is delivered
+                if order.status == 'Delivered':
+                    total_earnings += order_total
+
+        # Categorize orders
+        pending_orders = [o for o in farmer_orders if o['status'] == 'Pending']
+        active_orders = [o for o in farmer_orders if o['status'] in ['Pending', 'Confirmed']]
+        delivered_orders = [o for o in farmer_orders if o['status'] == 'Delivered']
+
+        print(f"Debug: Found {len(active_orders)} active, {len(delivered_orders)} delivered orders")
+        print(f"Debug: Total earnings: ₹{total_earnings}")
+
+        return jsonify({
+            'total_earnings': total_earnings,
+            'active_orders': len(active_orders),
+            'delivered_orders': len(delivered_orders),
+            'pending_orders': len(pending_orders),
+            'products_count': product_count,
+            'active_orders_details': active_orders
+        })
+
+    except Exception as e:
+        print(f"Error in get_farmer_sales_summary: {e}")
+        return jsonify({
+            'error': str(e),
+            'total_earnings': 0,
+            'active_orders': 0,
+            'delivered_orders': 0,
+            'pending_orders': 0,
+            'products_count': product_count,
+            'active_orders_details': []
+        }), 500
+
+@app.route('/reapply_product/<int:product_id>', methods=['POST'])
+def reapply_product(product_id):
+    if 'user_id' not in session or session.get('user_type') != 'farmer':
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        product = Product.query.get_or_404(product_id)
+        
+        # Verify the product belongs to the farmer
+        if product.farmer_id != session['user_id']:
+            return jsonify({'error': 'Unauthorized'}), 403
+            
+        # Reset approval status
+        product.is_approved = False
+        product.is_rejected = False
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Product resubmitted for approval'
+        })
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error reapplying product: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

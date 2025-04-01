@@ -51,15 +51,18 @@
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h3 class="text-xl font-bold mb-4">Sales Summary</h3>
                 <div class="space-y-2">
-                    <p><strong>Total Sales:</strong> ₹<span id="totalSales">0</span></p>
+                    <p><strong>Total Earnings:</strong> ₹<span id="totalEarnings">0.00</span></p>
                     <p><strong>Active Orders:</strong> <span id="activeOrders">0</span></p>
+                    <p><strong>Delivered Orders:</strong> <span id="deliveredOrders">0</span></p>
+                    <p><strong>Pending Orders:</strong> <span id="pendingOrders">0</span></p>
                     <p><strong>Products Listed:</strong> <span id="productsCount">0</span></p>
+                </div>
+                <div id="activeOrdersList" class="mt-4 space-y-4">
+                    <!-- Active orders will be displayed here -->
                 </div>
             </div>
         </div>
     </div>
-
-
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -69,6 +72,7 @@
             document.getElementById('profileEmail').textContent = "{{ session.get('user_email', '') }}";
             document.getElementById('profilePhone').textContent = "{{ session.get('user_phone', '') }}";
             loadProducts();
+            loadSalesSummary();
             
             // Start periodic product updates
             setInterval(loadProducts, 5000); // Refresh every 5 seconds
@@ -153,13 +157,9 @@
                                     <p class="text-gray-600">${product.category}</p>
                                     <p class="text-gray-600">₹${product.price}/kg</p>
                                     <p class="text-gray-600">Stock: ${product.stock}kg</p>
-                                    <span class="inline-block px-2 py-1 rounded text-sm mt-2 ${product.is_approved ? 
-                                        'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                                        ${product.is_approved ? 'Approved' : 'Pending Approval'}
-                                    </span>
-                                    ${product.is_approved ? 
-                                        '<span class="ml-2 text-green-600"><i class="fas fa-check-circle"></i> Live on Store</span>' 
-                                        : ''}
+                                    <div class="mt-2 flex items-center gap-2">
+                                        ${getProductStatus(product)}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -171,6 +171,97 @@
                         '<p class="text-red-500">Error loading products. Please try again later.</p>';
                 });
         }
+
+        function getProductStatus(product) {
+            if (product.is_rejected) {
+                return `
+                    <span class="inline-block px-2 py-1 rounded text-sm bg-red-100 text-red-800">
+                        Rejected
+                    </span>
+                    <button onclick="reapplyProduct(${product.id})" 
+                            class="ml-2 text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-redo"></i> Reapply
+                    </button>
+                `;
+            } else if (product.is_approved) {
+                return `
+                    <span class="inline-block px-2 py-1 rounded text-sm bg-green-100 text-green-800">
+                        Approved
+                    </span>
+                    <span class="ml-2 text-green-600">
+                        <i class="fas fa-check-circle"></i> Live on Store
+                    </span>
+                `;
+            } else {
+                return `
+                    <span class="inline-block px-2 py-1 rounded text-sm bg-yellow-100 text-yellow-800">
+                        Pending Approval
+                    </span>
+                `;
+            }
+        }
+
+        function reapplyProduct(productId) {
+            if (confirm('Do you want to reapply this product for approval?')) {
+                fetch(`/reapply_product/${productId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Product resubmitted for approval successfully!');
+                        loadProducts(); // Refresh the product list
+                    } else {
+                        throw new Error(data.error || 'Failed to reapply product');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to reapply product. Please try again.');
+                });
+            }
+        }
+
+        function loadSalesSummary() {
+            const farmerId = {{ session.get('user_id') }};
+            fetch(`/get_farmer_sales_summary/${farmerId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(summary => {
+                    console.log("Received summary:", summary); // Debug log
+                    document.getElementById('totalEarnings').textContent = summary.total_earnings.toFixed(2);
+                    document.getElementById('activeOrders').textContent = summary.active_orders;
+                    document.getElementById('deliveredOrders').textContent = summary.delivered_orders;
+                    document.getElementById('pendingOrders').textContent = summary.pending_orders;
+                    document.getElementById('productsCount').textContent = summary.products_count;
+
+                    const activeOrdersList = document.getElementById('activeOrdersList');
+                    if (summary.active_orders_details && summary.active_orders_details.length > 0) {
+                        activeOrdersList.innerHTML = summary.active_orders_details.map(order => `
+                            <div class="border p-4 rounded-lg">
+                                <p><strong>Order ID:</strong> ${order.id}</p>
+                                <p><strong>Total Amount:</strong> ₹${order.total_amount.toFixed(2)}</p>
+                                <p><strong>Status:</strong> ${order.status}</p>
+                            </div>
+                        `).join('');
+                    } else {
+                        activeOrdersList.innerHTML = '<p class="text-gray-500">No active orders</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading sales summary:', error);
+                });
+        }
+
+        // Call loadSalesSummary every 30 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSalesSummary();
+            setInterval(loadSalesSummary, 30000);
+        });
     </script>
 </body>
 </html>

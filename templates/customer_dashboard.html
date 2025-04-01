@@ -35,7 +35,7 @@
                     <button id="profileButton" 
                             onclick="toggleProfileMenu()"
                             class="text-white flex items-center gap-2 hover:text-gray-200 focus:outline-none">
-                        <img src="https://ui-avatars.com/api/?name={{ session.get('user_name', '') }}&background=random" 
+                        <img src="{{ session.get('user_profile_pic') }}" 
                              alt="Profile" 
                              class="w-8 h-8 rounded-full">
                         <span>{{ session.get('user_name', '') }}</span>
@@ -487,18 +487,28 @@
         function addToCart(productId, productName, price) {
             try {
                 const product = {
-                    id: productId,
-                    name: productName,
-                    price: parseFloat(price),
+                    product_id: productId, // Ensure the key matches the backend
                     quantity: 1
                 };
-                
-                const success = cart.add(product);
-                if (success) {
-                    showNotification(`Added ${productName} to cart`);
-                } else {
+
+                fetch('/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(product),
+                    credentials: 'include' // Include session cookies
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.message) {
+                        showNotification(`Added ${productName} to cart`);
+                    } else if (result.error) {
+                        showNotification(result.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding to cart:', error);
                     showNotification('Failed to add product to cart', 'error');
-                }
+                });
             } catch (error) {
                 console.error('Error in addToCart:', error);
                 showNotification('Failed to add product to cart', 'error');

@@ -153,6 +153,7 @@
             loadCartItems() {
                 const items = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
                 if (!items.length) {
+                    alert('No items found in your cart. Redirecting to the cart page.');
                     window.location.href = '/cart';
                     return;
                 }

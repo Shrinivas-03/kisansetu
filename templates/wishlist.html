@@ -35,7 +35,7 @@
                     <button id="profileButton" 
                             onclick="toggleProfileMenu()"
                             class="text-white flex items-center gap-2 hover:text-gray-200 focus:outline-none">
-                        <img src="https://ui-avatars.com/api/?name={{ session.get('user_name', '') }}&background=random" 
+                        <img src="{{ session.get('user_profile_pic') }}" 
                              alt="Profile" 
                              class="w-8 h-8 rounded-full">
                         <span>{{ session.get('user_name', '') }}</span>
