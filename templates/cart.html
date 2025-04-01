@@ -6,8 +6,52 @@
     <title>Shopping Cart - KisanSetu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --primary-dark: #388E3C;
+            --accent-color: #FF9800;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        }
+
+        .product-card {
+            transition: all 0.3s ease;
+            background: white;
+            border-radius: 1rem;
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .quantity-btn {
+            @apply px-3 py-1;
+            transition: all 0.2s ease;
+            background: #f8f9fa;
+        }
+
+        .quantity-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .checkout-btn {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            transition: all 0.3s ease;
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+    </style>
 </head>
-<body class="bg-[#FAF3E0] min-h-screen">
+<body class="bg-gradient-to-br from-[#f5f7fa] to-[#e4e9f2] min-h-screen">
     <!-- Custom Navbar -->
     <nav class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <div class="flex justify-between items-center max-w-7xl mx-auto">
@@ -96,9 +140,12 @@
         </div>
     </nav>
 
-    <div class="container mx-auto px-4 py-8">
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-bold mb-6">Shopping Cart</h1>
+    <div class="container mx-auto px-4 py-8 pt-24">
+        <div class="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-6">
+            <h1 class="text-3xl font-bold mb-8 text-gray-800 flex items-center gap-3">
+                <i class="fas fa-shopping-cart text-[#4CAF50]"></i>
+                Shopping Cart
+            </h1>
             <div id="cartItems" class="space-y-4">
                 <!-- Cart items will be loaded here -->
             </div>
@@ -134,7 +181,7 @@
                 }
 
                 container.innerHTML = cartItems.map(item => `
-                    <div class="flex items-center justify-between border-b pb-4">
+                    <div class="flex items-center justify-between border-b pb-4 product-card">
                         <div class="flex items-center space-x-4">
                             <img src="${item.image_url || 'https://via.placeholder.com/80'}" 
                                  alt="${item.name}"
@@ -147,10 +194,10 @@
                         <div class="flex items-center space-x-4">
                             <div class="flex items-center border rounded">
                                 <button onclick="updateCart(${item.product_id}, ${item.quantity - 1})"
-                                        class="px-3 py-1 hover:bg-gray-100">-</button>
+                                        class="quantity-btn">-</button>
                                 <span class="px-4 py-1 border-x">${item.quantity}</span>
                                 <button onclick="updateCart(${item.product_id}, ${item.quantity + 1})"
-                                        class="px-3 py-1 hover:bg-gray-100">+</button>
+                                        class="quantity-btn">+</button>
                             </div>
                             <p class="font-semibold">₹${item.total_price.toFixed(2)}</p>
                             <button onclick="removeFromCart(${item.product_id})"
@@ -168,7 +215,7 @@
                         <span class="text-2xl font-bold">₹${total.toFixed(2)}</span>
                     </div>
                     <button onclick="checkout()"
-                            class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors">
+                            class="w-full checkout-btn text-white py-3 rounded-lg hover:bg-green-600 transition-colors">
                         Proceed to Checkout
                     </button>`;
             } catch (error) {

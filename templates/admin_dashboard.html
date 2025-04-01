@@ -6,10 +6,30 @@
     <title>KisanSetu - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f7f9fc;
+        }
+        .dashboard-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px -3px rgba(0,0,0,0.1);
+        }
+        .eco-gradient {
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Custom Admin Navbar -->
-    <nav class="bg-[#4CAF50] text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
+    <nav class="eco-gradient text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 py-3">
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-4">
@@ -35,75 +55,81 @@
 
     <!-- Main Content - Adjust top padding for navbar -->
     <div class="container mx-auto px-4 pt-20 pb-8">
-        <!-- Remove the old header since it's now in navbar -->
-        <div class="max-w-7xl mx-auto px-4 pb-8">
-            <!-- Pending Farmer Approvals - Now First -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 class="text-xl font-bold mb-4">Pending Farmer Approvals</h2>
-                <div id="pendingApprovals" class="space-y-4">
-                    <!-- Combined registration and KYC approvals will be loaded here -->
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Remove Total Farmers card and keep comment for future stats -->
+            <!-- Add similar cards for Total Products and Revenue -->
+        </div>
+
+        <!-- Pending Farmer Approvals - Now First -->
+        <div class="dashboard-card p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4 text-gray-800 flex items-center">
+                <i class="fas fa-clock text-green-600 mr-2"></i>
+                Pending Farmer Approvals
+            </h2>
+            <div id="pendingApprovals" class="space-y-4">
+                <!-- Combined registration and KYC approvals will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Add Registered Farmers Section -->
+        <div class="dashboard-card p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Registered Farmers</h2>
+                <div class="flex gap-2">
+                    <select id="farmerFilter" class="border rounded-lg px-3 py-2">
+                        <option value="all">All Farmers</option>
+                        <option value="verified">Verified</option>
+                        <option value="unverified">Unverified</option>
+                    </select>
                 </div>
             </div>
-
-            <!-- Add Registered Farmers Section -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-gray-800">Registered Farmers</h2>
-                    <div class="flex gap-2">
-                        <select id="farmerFilter" class="border rounded-lg px-3 py-2">
-                            <option value="all">All Farmers</option>
-                            <option value="verified">Verified</option>
-                            <option value="unverified">Unverified</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="registeredFarmers" class="space-y-4">
-                    <!-- Registered farmers will be loaded here -->
-                </div>
+            <div id="registeredFarmers" class="space-y-4">
+                <!-- Registered farmers will be loaded here -->
             </div>
+        </div>
 
-            <!-- Stock Notifications Section -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-gray-800">Stock Notifications</h2>
-                    <button onclick="adminDashboard.clearNotifications()" 
-                            class="bg-[#FF9800] text-white px-4 py-2 rounded-lg hover:bg-[#F57C00] transition-colors">
-                        Clear All
-                    </button>
-                </div>
-                <div id="stockNotifications" class="space-y-4">
-                    <!-- Notifications will be loaded here -->
-                </div>
+        <!-- Stock Notifications Section -->
+        <div class="dashboard-card p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Stock Notifications</h2>
+                <button onclick="adminDashboard.clearNotifications()" 
+                        class="bg-[#FF9800] text-white px-4 py-2 rounded-lg hover:bg-[#F57C00] transition-colors">
+                    Clear All
+                </button>
             </div>
-
-            <!-- Products Section -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 class="text-xl font-bold mb-6 text-gray-800">Pending Product Approvals</h2>
-                <div id="pendingProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Products will be listed here -->
-                </div>
+            <div id="stockNotifications" class="space-y-4">
+                <!-- Notifications will be loaded here -->
             </div>
+        </div>
 
-            <!-- Approved Products Section -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 class="text-xl font-bold mb-6 text-gray-800">Approved Products</h2>
-                <div id="approvedProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Approved products will be listed here -->
-                </div>
+        <!-- Products Section -->
+        <div class="dashboard-card p-6 mb-8">
+            <h2 class="text-xl font-bold mb-6 text-gray-800">Pending Product Approvals</h2>
+            <div id="pendingProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Products will be listed here -->
             </div>
+        </div>
 
-            <!-- Rejected Products Section -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-gray-800">Rejected Products</h2>
-                    <button onclick="adminDashboard.clearRejectedProducts()" 
-                            class="bg-[#FF9800] text-white px-4 py-2 rounded-lg hover:bg-[#F57C00] transition-colors">
-                        Clear All
-                    </button>
-                </div>
-                <div id="rejectedProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Rejected products will be listed here -->
-                </div>
+        <!-- Approved Products Section -->
+        <div class="dashboard-card p-6 mb-8">
+            <h2 class="text-xl font-bold mb-6 text-gray-800">Approved Products</h2>
+            <div id="approvedProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Approved products will be listed here -->
+            </div>
+        </div>
+
+        <!-- Rejected Products Section -->
+        <div class="dashboard-card p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Rejected Products</h2>
+                <button onclick="adminDashboard.clearRejectedProducts()" 
+                        class="bg-[#FF9800] text-white px-4 py-2 rounded-lg hover:bg-[#F57C00] transition-colors">
+                    Clear All
+                </button>
+            </div>
+            <div id="rejectedProducts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Rejected products will be listed here -->
             </div>
         </div>
     </div>

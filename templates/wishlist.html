@@ -6,8 +6,31 @@
     <title>My Wishlist - KisanSetu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        }
+        .wishlist-card {
+            background: white;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .wishlist-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        .wishlist-card img {
+            transition: all 0.5s ease;
+        }
+        .wishlist-card:hover img {
+            transform: scale(1.05);
+        }
+    </style>
 </head>
-<body class="bg-[#FAF3E0] min-h-screen">
+<body class="bg-gradient-to-br from-[#f5f7fa] to-[#e4e9f2] min-h-screen">
     <!-- Custom Navbar -->
     <nav class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <div class="flex justify-between items-center max-w-7xl mx-auto">
@@ -96,8 +119,11 @@
     </nav>
 
     <div class="container mx-auto px-4 py-8 pt-20">
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-bold mb-6">My Wishlist</h1>
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+            <h1 class="text-3xl font-bold mb-8 text-gray-800 flex items-center gap-3">
+                <i class="fas fa-heart text-[#4CAF50]"></i>
+                My Wishlist
+            </h1>
             <div id="wishlistItems" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Wishlist items will be loaded here -->
             </div>
@@ -138,7 +164,7 @@
                 }
 
                 container.innerHTML = items.map(item => `
-                    <div class="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                    <div class="wishlist-card border rounded-lg p-4 hover:shadow-lg transition-shadow">
                         <img src="${item.image_url || 'https://via.placeholder.com/200x200?text=' + encodeURIComponent(item.name)}" 
                              alt="${item.name}"
                              class="w-full h-48 object-cover rounded-lg mb-4">

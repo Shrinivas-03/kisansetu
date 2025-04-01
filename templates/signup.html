@@ -5,50 +5,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kisansetu - Sign Up</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        .form-input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+            transform: translateY(-1px);
+        }
+        .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4CAF50;
+            pointer-events: none;
+        }
+        .select-wrapper {
+            position: relative;
+        }
+        .select-wrapper::after {
+            content: '';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #4CAF50;
+            pointer-events: none;
+        }
+    </style>
 </head>
-<body class="bg-[#FAF3E0] min-h-screen flex flex-col">
-    <div class="flex-grow flex items-center justify-center p-5">
-        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-            <h2 class="text-2xl text-blue-600 text-center mb-8">Create an Account</h2>
-            <form method="POST" action="{{ url_for('signup') }}" class="space-y-4">
-                <div>
-                    <label for="name" class="block font-bold mb-2">Full Name</label>
+<body class="min-h-screen flex items-center justify-center py-8 px-4">
+    <div class="glass-card p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+            <img src="https://img.icons8.com/color/96/000000/tractor.png" 
+                 class="w-20 h-20 mx-auto" alt="KisanSetu Logo">
+            <h2 class="text-3xl font-bold text-green-800 mt-4">Create Account</h2>
+            <p class="text-gray-600 mt-2">Join KisanSetu Community</p>
+        </div>
+        
+        <form method="POST" action="{{ url_for('signup') }}" class="space-y-6">
+            <div class="input-group">
+                <label class="block text-gray-700 font-medium mb-2">Full Name</label>
+                <div class="relative">
                     <input type="text" id="name" name="name" required
-                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                           class="form-input"
+                           placeholder="Enter your full name">
+                    <span class="input-icon">
+                        <i class="fas fa-user"></i>
+                    </span>
                 </div>
-                <div>
-                    <label for="email" class="block font-bold mb-2">Email</label>
+            </div>
+
+            <div class="input-group">
+                <label class="block text-gray-700 font-medium mb-2">Email</label>
+                <div class="relative">
                     <input type="email" id="email" name="email" required
-                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                           class="form-input"
+                           placeholder="Enter your email">
+                    <span class="input-icon">
+                        <i class="fas fa-envelope"></i>
+                    </span>
                 </div>
-                <div>
-                    <label for="password" class="block font-bold mb-2">Password</label>
+            </div>
+
+            <div class="input-group">
+                <label class="block text-gray-700 font-medium mb-2">Password</label>
+                <div class="relative">
                     <input type="password" id="password" name="password" required
-                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                           class="form-input"
+                           placeholder="Create a password">
+                    <span class="input-icon">
+                        <i class="fas fa-lock"></i>
+                    </span>
                 </div>
-                <div>
-                    <label for="phone" class="block font-bold mb-2">Phone Number</label>
+            </div>
+
+            <div class="input-group">
+                <label class="block text-gray-700 font-medium mb-2">Phone Number</label>
+                <div class="relative">
                     <input type="tel" id="phone" name="phone" pattern="[0-9]{10}" required
-                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                           class="form-input"
+                           placeholder="Enter your phone number">
+                    <span class="input-icon">
+                        <i class="fas fa-phone"></i>
+                    </span>
                 </div>
-                <div>
-                    <label for="role" class="block font-bold mb-2">I am a</label>
+            </div>
+
+            <div class="input-group">
+                <label class="block text-gray-700 font-medium mb-2">I am a</label>
+                <div class="select-wrapper">
                     <select id="role" name="user_type" required
-                            class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            class="form-input appearance-none">
                         <option value="customer">Customer</option>
                         <option value="farmer">Farmer</option>
                     </select>
+                    <span class="input-icon">
+                        <i class="fas fa-user-tag"></i>
+                    </span>
                 </div>
-                <button type="submit" 
-                        class="w-full py-2 bg-[#4CAF50] text-white rounded hover:bg-[#388E3C] transition-colors">
-                    Sign Up
-                </button>
-            </form>
-            <p class="mt-4 text-center text-sm text-gray-600">
-                Already registered? <a href="/login" class="text-blue-600 hover:underline">Log In</a>
-            </p>
-        </div>
+            </div>
+
+            <button type="submit" 
+                    class="w-full bg-[#4CAF50] text-white py-3 rounded-lg hover:bg-[#388E3C] transform hover:scale-[1.02] transition-all duration-200 font-medium text-lg">
+                Sign Up
+            </button>
+        </form>
+
+        <p class="mt-6 text-center text-sm text-gray-600">
+            Already registered? <a href="/login" class="text-[#4CAF50] hover:text-[#388E3C] font-medium hover:underline">Log In</a>
+        </p>
     </div>
 </body>
 </html>

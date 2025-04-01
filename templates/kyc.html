@@ -6,20 +6,55 @@
     <title>KYC Verification - KisanSetu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        }
+        .form-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .step-number {
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            transition: all 0.3s ease;
+        }
+        .step-number.active {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+        }
+        .form-input {
+            @apply w-full p-3 border-2 border-gray-200 rounded-lg;
+            transition: all 0.3s ease;
+        }
+        .form-input:focus {
+            @apply border-[#4CAF50] ring-2 ring-[#4CAF50]/20;
+            transform: translateY(-1px);
+        }
+        .progress-line {
+            height: 2px;
+            transition: all 0.3s ease;
+        }
+        .progress-line.active {
+            background: linear-gradient(to right, #4CAF50, #388E3C);
+        }
+    </style>
 </head>
-<body class="bg-[#FAF3E0] min-h-screen">
-    <div class="container mx-auto px-4 py-8">
+<body class="min-h-screen py-8">
+    <div class="container mx-auto px-4">
         <div class="max-w-2xl mx-auto">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h1 class="text-2xl font-bold text-center mb-8">KYC Verification</h1>
+            <div class="form-card p-8">
+                <h1 class="text-3xl font-bold text-center text-[#2C5F2D] mb-8">Farmer Verification</h1>
 
                 <!-- Progress Steps -->
                 <div class="flex justify-between items-center mb-8">
                     <div id="step1" class="flex flex-col items-center">
-                        <div class="w-8 h-8 bg-[#800000] text-white rounded-full flex items-center justify-center mb-2">1</div>
+                        <div class="w-8 h-8 step-number text-white rounded-full flex items-center justify-center mb-2">1</div>
                         <span class="text-sm">Fruit ID</span>
                     </div>
-                    <div class="flex-1 h-1 bg-gray-200 mx-2" id="line1"></div>
+                    <div class="flex-1 progress-line bg-gray-200 mx-2" id="line1"></div>
                     <div id="step2" class="flex flex-col items-center">
                         <div class="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center mb-2">2</div>
                         <span class="text-sm">Documents</span>
@@ -32,7 +67,7 @@
                         <label class="block font-medium mb-2">Enter Fruit ID</label>
                         <div class="flex gap-2">
                             <input type="text" id="fruitId" 
-                                   class="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-[#800000] focus:border-[#800000]"
+                                   class="flex-1 p-3 border-2 border-gray-200 rounded-lg bg-gray-50 focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 focus:bg-white transition-all"
                                    placeholder="Enter your Fruit ID">
                             <button onclick="verifyFruitId()" 
                                     class="bg-[#800000] text-white px-4 py-2 rounded-lg hover:bg-[#B22222] transition-colors">
@@ -90,7 +125,7 @@
                     <div>
                         <label class="block font-medium mb-2">Document Type</label>
                         <select id="documentType" 
-                                class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#4CAF50]">
+                                class="flex-1 p-3 border-2 border-gray-200 rounded-lg bg-gray-50 focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 focus:bg-white transition-all appearance-none w-full">
                             <option value="">Select Document Type</option>
                             <option value="aadhar">Aadhar Card</option>
                             <option value="pan">PAN Card</option>
@@ -99,21 +134,23 @@
                     <div>
                         <label class="block font-medium mb-2">Document Number</label>
                         <input type="text" id="documentNumber" 
-                               class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#4CAF50]">
+                               class="flex-1 p-3 border-2 border-gray-200 rounded-lg bg-gray-50 focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 focus:bg-white transition-all w-full"
+                               placeholder="Enter document number">
                     </div>
                     <div>
                         <label class="block font-medium mb-2">Upload Document</label>
                         <input type="file" id="documentImage" 
-                               class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#4CAF50]"
+                               class="flex-1 p-3 border-2 border-gray-200 rounded-lg bg-gray-50 focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 focus:bg-white transition-all w-full"
                                accept="image/*">
                     </div>
                     <div class="flex justify-between">
-                        <button onclick="prevStep(2)" 
-                                class="px-6 py-2 border rounded-lg hover:bg-gray-100">
+                        <button onclick="goBack()" 
+                                class="px-6 py-2 border rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2">
+                            <i class="fas fa-arrow-left"></i>
                             Back
                         </button>
                         <button onclick="submitKYC()" 
-                                class="px-6 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#388E3C]">
+                                class="px-6 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#388E3C] transition-colors">
                             Submit KYC
                         </button>
                     </div>
@@ -231,6 +268,22 @@
                 console.error('Error:', error);
                 alert('Failed to submit KYC. Please try again.');
             }
+        }
+
+        function goBack() {
+            // Hide document form
+            document.getElementById('documentForm').classList.add('hidden');
+            // Show fruit ID form
+            document.getElementById('fruitIdForm').classList.remove('hidden');
+            
+            // Reset progress indicators
+            document.getElementById('step1').querySelector('div').classList.remove('bg-green-500');
+            document.getElementById('step2').querySelector('div').classList.add('bg-gray-200');
+            document.getElementById('step2').querySelector('div').classList.remove('bg-[#800000]', 'text-white');
+            document.getElementById('line1').classList.remove('bg-green-500');
+            
+            // Reset current step
+            currentStep = 1;
         }
     </script>
 </body>

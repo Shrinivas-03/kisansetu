@@ -5,10 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OTP Verification</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .otp-input {
+            letter-spacing: 1em;
+            text-align: center;
+            font-size: 1.5em;
+            padding-left: 1em;
+            background: rgba(255, 255, 255, 0.9);
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-4 text-center">OTP Verification</h1>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="glass-card p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+            <img src="https://img.icons8.com/color/96/000000/tractor.png" 
+                 class="w-20 h-20 mx-auto" alt="KisanSetu Logo">
+            <h2 class="text-3xl font-bold text-[#2C5F2D] mt-4">Verify Your Account</h2>
+            <p class="text-gray-600 mt-2">We've sent a verification code to your email</p>
+        </div>
         {% if session.get('user_type') == 'farmer' %}
             <div class="mb-4 p-4 bg-yellow-100 text-yellow-700 rounded">
                 Note: After verification, your account will need admin approval before you can login.
@@ -18,7 +46,7 @@
             <div>
                 <label for="otp" class="block text-sm font-medium text-gray-700">Enter OTP:</label>
                 <input type="text" id="otp" name="otp" required 
-                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                       class="otp-input mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
             </div>
             <button type="submit" 
                     class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">

@@ -6,8 +6,33 @@
     <title>Kisansetu - Checkout</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        }
+
+        .form-input {
+            @apply w-full p-3 border-2 border-gray-200 rounded-lg;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            @apply border-[#4CAF50] ring-2 ring-[#4CAF50]/20;
+            transform: translateY(-1px);
+        }
+
+        .payment-option {
+            transition: all 0.3s ease;
+        }
+
+        .payment-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
-<body class="bg-[#FAF3E0]">
+<body class="bg-gradient-to-br from-[#f5f7fa] to-[#e4e9f2]">
     <script>
         fetch('navbar.html')
             .then(response => response.text())
@@ -43,56 +68,56 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 pt-20 pb-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="max-w-7xl mx-auto px-4 pt-24 pb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Delivery Information -->
             <div class="lg:col-span-2 space-y-6">
                 <!-- Delivery Address -->
-                <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8">
                     <h2 class="text-lg font-bold mb-4">Delivery Address</h2>
                     <form id="addressForm" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                                 <input type="text" id="fullName" required
-                                       class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="form-input">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                                 <input type="tel" id="phone" pattern="[0-9]{10}" required
-                                       class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="form-input">
                             </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
                             <input type="text" id="address" required
-                                   class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                   class="form-input">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
                                 <input type="text" id="city" required
-                                       class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="form-input">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
                                 <input type="text" id="state" required
-                                       class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="form-input">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">PIN Code</label>
                                 <input type="text" id="pincode" pattern="[0-9]{6}" required
-                                       class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                       class="form-input">
                             </div>
                         </div>
                     </form>
                 </div>
 
                 <!-- Payment Method -->
-                <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8">
                     <h2 class="text-lg font-bold mb-4">Payment Method</h2>
                     <div class="space-y-4">
-                        <div class="flex items-center p-4 border rounded-lg">
+                        <div class="flex items-center p-4 border rounded-lg payment-option">
                             <input type="radio" name="payment" id="cod" value="cod" checked
                                    class="h-4 w-4 text-[#4CAF50]">
                             <label for="cod" class="ml-3">
@@ -100,7 +125,7 @@
                                 <span class="block text-sm text-gray-500">Pay when you receive your order</span>
                             </label>
                         </div>
-                        <div class="flex items-center p-4 border rounded-lg bg-gray-50">
+                        <div class="flex items-center p-4 border rounded-lg bg-gray-50 payment-option">
                             <input type="radio" name="payment" id="online" value="online" disabled
                                    class="h-4 w-4 text-blue-600">
                             <label for="online" class="ml-3">

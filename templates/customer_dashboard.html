@@ -6,8 +6,59 @@
     <title>Kisansetu - Customer Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --primary-dark: #388E3C;
+            --accent-color: #FF9800;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .product-card img {
+            transition: all 0.5s ease;
+        }
+
+        .product-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .search-bar {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .filter-dropdown {
+            @apply p-2 border rounded-lg;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .filter-dropdown:focus {
+            @apply ring-2 ring-[#4CAF50]/20 border-[#4CAF50];
+            transform: translateY(-1px);
+        }
+    </style>
 </head>
-<body class="bg-[#FAF3E0] m-0 font-sans">
+<body class="bg-gradient-to-br from-[#f5f7fa] to-[#e4e9f2]">
     <!-- Custom Navbar -->
     <nav class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <div class="flex justify-between items-center max-w-7xl mx-auto">
@@ -98,7 +149,7 @@
 
     <div class="pt-20 px-5 max-w-7xl mx-auto">
         <!-- Search Section -->
-        <div class="bg-white p-5 rounded-lg shadow mb-5">
+        <div class="bg-white p-5 rounded-lg shadow mb-5 search-bar">
             <div class="flex gap-3 flex-wrap">
                 <div class="flex-1 flex gap-2">
                     <input type="text" id="searchInput" placeholder="Search products..." 
@@ -111,7 +162,7 @@
                         </span>
                     </button>
                 </div>
-                <select id="categoryFilter" class="p-2 border rounded">
+                <select id="categoryFilter" class="filter-dropdown">
                     <option value="all">All Categories</option>
                     <option value="vegetables">Vegetables</option>
                     <option value="fruits">Fruits</option>
@@ -119,13 +170,13 @@
                     <option value="dairy">Dairy</option>
                     <option value="pulses">Pulses</option>
                 </select>
-                <select id="priceFilter" class="p-2 border rounded">
+                <select id="priceFilter" class="filter-dropdown">
                     <option value="all">All Prices</option>
                     <option value="0-100">₹0 - ₹100</option>
                     <option value="101-500">₹101 - ₹500</option>
                     <option value="501-up">₹501+</option>
                 </select>
-                <select id="sortBy" class="p-2 border rounded">
+                <select id="sortBy" class="filter-dropdown">
                     <option value="rating-desc">Rating: High to Low</option>
                     <option value="price-asc">Price: Low to High</option>
                     <option value="price-desc">Price: High to Low</option>
@@ -349,7 +400,7 @@
                 }
 
                 container.innerHTML = products.map(product => `
-                    <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                    <div class="product-card p-4 hover:shadow-lg transition-shadow">
                         <div class="relative">
                             <img src="${product.image_url || 'https://via.placeholder.com/200x200?text=' + encodeURIComponent(product.name)}" 
                                  alt="${product.name}" 

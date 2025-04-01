@@ -6,10 +6,38 @@
     <title>KisanSetu - Farmer Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        }
+        .stat-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        .eco-gradient {
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+        }
+        .product-card {
+            border-radius: 1rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
-<body class="bg-[#FAF3E0] min-h-screen">
+<body class="bg-gradient-to-br from-[#f5f7fa] to-[#e4e9f2] min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-white shadow-lg">
+    <nav class="bg-white/80 backdrop-blur-sm shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
                 <div class="text-2xl font-bold text-blue-600">KisanSetu</div>
@@ -24,11 +52,14 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="max-w-7xl mx-auto px-4 py-8">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Profile Card -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-xl font-bold mb-4">Profile Information</h3>
+            <div class="stat-card p-6">
+                <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-user-circle text-green-600"></i>
+                    Profile Information
+                </h3>
                 <div class="space-y-2">
                     <p><strong>Name:</strong> <span id="profileName"></span></p>
                     <p><strong>Email:</strong> <span id="profileEmail"></span></p>
@@ -37,7 +68,7 @@
             </div>
 
             <!-- Product Management -->
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="stat-card p-6">
                 <h3 class="text-xl font-bold mb-4">Product Management</h3>
                 <button onclick="window.location.href='/farmer/add_product'" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
                     <i class="fas fa-plus"></i> Add New Product
@@ -48,7 +79,7 @@
             </div>
 
             <!-- Sales Summary -->
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="stat-card p-6">
                 <h3 class="text-xl font-bold mb-4">Sales Summary</h3>
                 <div class="space-y-2">
                     <p><strong>Total Earnings:</strong> ₹<span id="totalEarnings">0.00</span></p>

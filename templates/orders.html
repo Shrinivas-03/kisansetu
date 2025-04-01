@@ -6,8 +6,33 @@
     <title>My Orders - KisanSetu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        }
+        .order-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        .filter-dropdown {
+            @apply p-2 border rounded-lg;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .filter-dropdown:focus {
+            @apply ring-2 ring-green-500/20 border-green-500;
+            transform: translateY(-1px);
+        }
+    </style>
 </head>
-<body class="bg-[#FAF3E0] min-h-screen">
+<body class="bg-gradient-to-br from-[#f5f7fa] to-[#e4e9f2] min-h-screen">
     <!-- Custom Navbar -->
     <nav class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <div class="flex justify-between items-center max-w-7xl mx-auto">
@@ -96,12 +121,15 @@
     </nav>
 
     <div class="container mx-auto px-4 py-8 pt-20">
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-bold mb-6">My Orders</h1>
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+            <h1 class="text-3xl font-bold mb-8 text-gray-800 flex items-center gap-3">
+                <i class="fas fa-box text-green-600"></i>
+                My Orders
+            </h1>
             
             <!-- Filters -->
             <div class="flex flex-wrap gap-4 mb-6">
-                <select id="statusFilter" class="p-2 border rounded">
+                <select id="statusFilter" class="filter-dropdown">
                     <option value="all">All Orders</option>
                     <option value="Pending">Pending</option>
                     <option value="Confirmed">Confirmed</option>
@@ -171,7 +199,7 @@
                 }
 
                 container.innerHTML = orders.map(order => `
-                    <div class="border rounded-lg p-6 hover:shadow-lg transition-shadow">
+                    <div class="order-card border rounded-lg p-6 hover:shadow-lg transition-shadow">
                         <div class="flex justify-between items-start mb-4">
                             <div>
                                 <h3 class="font-bold text-lg">Order #${order.id}</h3>

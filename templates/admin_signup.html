@@ -5,10 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KisanSetu - Admin Registration</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4CAF50;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Admin Registration</h2>
+<body class="min-h-screen flex items-center justify-center py-12">
+    <div class="glass-card p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="flex items-center justify-center mb-8">
+            <img src="https://img.icons8.com/color/96/000000/tractor.png" class="w-16 h-16" alt="KisanSetu Logo">
+            <h2 class="text-3xl font-bold text-[#2C5F2D] ml-4">Admin Registration</h2>
+        </div>
         
         {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -19,39 +46,41 @@
         {% endwith %}
 
         <form method="POST" action="{{ url_for('admin_signup') }}" class="space-y-6">
-            <div>
-                <label class="block text-gray-700 mb-2">Full Name</label>
-                <input type="text" name="name" required 
-                       class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-            </div>
-            <div>
-                <label class="block text-gray-700 mb-2">Email</label>
-                <input type="email" name="email" required 
-                       class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-            </div>
-            <div>
-                <label class="block text-gray-700 mb-2">Password</label>
-                <input type="password" name="password" required minlength="8"
-                       class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-            </div>
-            <div>
-                <label class="block text-gray-700 mb-2">Confirm Password</label>
-                <input type="password" name="confirm_password" required minlength="8"
-                       class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-            </div>
-            <div>
-                <label class="block text-gray-700 mb-2">Admin Key</label>
-                <input type="password" name="admin_key" required
-                       class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                       placeholder="Enter admin registration key">
+            <div class="space-y-4">
+                <div class="input-group">
+                    <label class="block text-gray-700 font-medium mb-2">Full Name</label>
+                    <input type="text" name="name" required 
+                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
+                </div>
+                <div class="input-group">
+                    <label class="block text-gray-700 font-medium mb-2">Email</label>
+                    <input type="email" name="email" required 
+                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
+                </div>
+                <div class="input-group">
+                    <label class="block text-gray-700 font-medium mb-2">Password</label>
+                    <input type="password" name="password" required minlength="8"
+                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
+                </div>
+                <div class="input-group">
+                    <label class="block text-gray-700 font-medium mb-2">Confirm Password</label>
+                    <input type="password" name="confirm_password" required minlength="8"
+                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
+                </div>
+                <div class="input-group">
+                    <label class="block text-gray-700 font-medium mb-2">Admin Key</label>
+                    <input type="password" name="admin_key" required
+                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all"
+                           placeholder="Enter admin registration key">
+                </div>
             </div>
             <button type="submit" 
-                    class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                    class="w-full bg-[#4CAF50] text-white py-3 rounded-lg hover:bg-[#388E3C] transform hover:scale-[1.02] transition-all duration-200 font-medium text-lg">
                 Register
             </button>
         </form>
-        <p class="mt-4 text-center text-sm text-gray-600">
-            Already have an account? <a href="{{ url_for('admin_login') }}" class="text-blue-600 hover:underline">Login</a>
+        <p class="mt-6 text-center text-sm text-gray-600">
+            Already have an account? <a href="{{ url_for('admin_login') }}" class="text-[#4CAF50] hover:text-[#388E3C] font-medium hover:underline">Login</a>
         </p>
     </div>
 </body>
