@@ -6,6 +6,7 @@
     <title>Kisansetu - Customer Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/theme.css') }}" rel="stylesheet">
     <style>
         :root {
             --primary-color: #4CAF50;
@@ -15,11 +16,11 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+            background-color: var(--background);
         }
 
         .product-card {
-            background: white;
+            background: var(--white);
             border-radius: 1rem;
             transition: all 0.3s ease;
             position: relative;
@@ -56,16 +57,50 @@
             @apply ring-2 ring-[#4CAF50]/20 border-[#4CAF50];
             transform: translateY(-1px);
         }
+
+        .primary-button {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .primary-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .accent-button {
+            background: var(--accent-color);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .accent-button:hover {
+            background: #F57C00;
+            transform: translateY(-1px);
+        }
+
+        .nav-primary {
+            background: var(--primary);
+        }
+
+        .cart-btn {
+            background: var(--accent);
+        }
+
+        .wishlist-icon.active {
+            color: var(--accent);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-[#f5f7fa] to-[#e4e9f2]">
     <!-- Custom Navbar -->
-    <nav class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
+    <nav class="bg-[var(--primary-color)] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <div class="flex justify-between items-center max-w-7xl mx-auto">
             <div class="flex items-center space-x-4">
                 <h1 class="text-2xl font-bold text-white">KisanSetu</h1>
                 <a href="/customer/dashboard" class="text-white hover:text-gray-200">Home</a>
-                <a href="/about" class="text-white hover:text-gray-200">About</a>
+             
             </div>
 
             <!-- Desktop Navigation -->
@@ -115,7 +150,7 @@
         </div>
 
         <!-- Mobile Navigation -->
-        <div id="mobileMenu" class="fixed top-[72px] left-0 right-0 bg-[#4CAF50] p-4 hidden lg:hidden">
+        <div id="mobileMenu" class="fixed top-[72px] left-0 right-0 bg-[var(--primary-color)] p-4 hidden lg:hidden">
             <div class="flex flex-col gap-4">
                 <a href="/orders" class="text-white no-underline py-2 hover:bg-[#388E3C] px-4 rounded flex items-center gap-2">
                     <i class="fas fa-box"></i>
@@ -408,7 +443,7 @@
                                  onerror="this.src='https://via.placeholder.com/200x200?text=${encodeURIComponent(product.name)}'">
                             <!-- Add wishlist button -->
                             <button onclick="toggleWishlist('${product.id}')"
-                                    class="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors wishlist-btn"
+                                    class="absolute top-2 right-2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-colors wishlist-btn"
                                     data-product-id="${product.id}">
                                 <i class="fas fa-heart text-gray-400 wishlist-icon"></i>
                             </button>
@@ -423,7 +458,7 @@
                         <p class="text-gray-600 line-clamp-2 mb-2 h-12 overflow-hidden">${product.description || 'No description available'}</p>
                         <p class="text-sm text-gray-600 mb-2">By ${product.farmerName || 'Unknown'}</p>
                         <button onclick="addToCart('${product.id}', '${product.name.replace(/'/g, "\\'")}', ${parseFloat(product.price)})"
-                                class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                                class="w-full primary-button py-2 px-4 rounded-lg">
                             Add to Cart
                         </button>
                     </div>

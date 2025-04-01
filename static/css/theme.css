@@ -1,0 +1,79 @@
+:root {
+    --primary: #4CAF50;
+    --primary-dark: #388E3C;
+    --secondary: #FBC02D;
+    --accent: #FF9800;
+    --background: #FAF3E0;
+    --white: #FFFFFF;
+    --error: #f44336;
+    --success: #4CAF50;
+    --warning: #FBC02D;
+}
+
+/* Base Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--background);
+}
+
+.theme-gradient {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
+
+/* Button Styles */
+.primary-button {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.primary-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+}
+
+.accent-button {
+    background: var(--accent);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.accent-button:hover {
+    background: #F57C00;
+    transform: translateY(-1px);
+}
+
+.secondary-button {
+    background: var(--secondary);
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+.secondary-button:hover {
+    background: #F9A825;
+    transform: translateY(-1px);
+}
+
+/* Form Input Styles */
+.form-input {
+    @apply w-full p-3 border-2 border-gray-200 rounded-lg bg-gray-50;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    @apply border-[#4CAF50] ring-2 ring-[#4CAF50]/20 bg-white;
+    transform: translateY(-1px);
+}
+
+/* Card Styles */
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+/* Status Colors */
+.status-approved { color: var(--success); }
+.status-pending { color: var(--warning); }
+.status-rejected { color: var(--error); }

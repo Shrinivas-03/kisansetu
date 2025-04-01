@@ -11,7 +11,7 @@
         body {
             font-family: 'Poppins', sans-serif;
             background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
-                url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+                url('https://images.unsplash.com/photo-1500382017468-9049fed747ef');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -21,6 +21,13 @@
             backdrop-filter: blur(10px);
             border-radius: 1rem;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .primary-button {
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            color: white;
+        }
+        .primary-button:hover {
+            background: linear-gradient(135deg, #388E3C 0%, #2E7D32 100%);
         }
     </style>
 </head>
@@ -76,7 +83,7 @@
             </div>
 
             <button type="submit" 
-                    class="w-full bg-[#4CAF50] text-white py-3 rounded-lg hover:bg-[#388E3C] transform hover:scale-[1.02] transition-all duration-200 font-medium text-lg">
+                    class="w-full primary-button py-3 rounded-lg transform hover:scale-[1.02] transition-all duration-200 font-medium text-lg">
                 Sign In
             </button>
         </form>
