@@ -9,14 +9,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/theme.css') }}" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #4CAF50;
+            --primary-dark: #388E3C;
+            --secondary: #FBC02D;
+            --accent: #FF9800;
+            --background: #fff5f7; /* Light pink background */
+        }
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: var(--background);
+            background: linear-gradient(to bottom right, var(--background-gradient-start), var(--background-gradient-end));
         }
         .dashboard-card {
-            background: var(--white);
+            background: white;
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
         }
         .admin-nav {
             background: var(--primary);
@@ -29,16 +38,17 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gradient-to-br from-pink-50 to-pink-100 min-h-screen">
     <!-- Custom Admin Navbar -->
-    <nav class="eco-gradient text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 py-3">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <h1 class="text-2xl font-bold">KisanSetu Admin</h1>
-                    <span class="text-sm bg-white text-[#4CAF50] px-2 py-1 rounded-full">Administrator</span>
+    <nav class="bg-[var(--primary)] text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <img src="https://img.icons8.com/color/96/000000/tractor.png" 
+                         class="w-10 h-10" alt="KisanSetu Logo">
+                    <div class="text-3xl md:text-4xl font-bold text-white">KisanSetu Admin</div>
                 </div>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center space-x-4">
                     <div class="flex items-center gap-2">
                         <img src="https://ui-avatars.com/api/?name={{ session.get('admin_name', '') }}&background=random" 
                              alt="Admin" 
@@ -46,7 +56,7 @@
                         <span class="font-medium text-white">{{ session.get('admin_name', '') }}</span>
                     </div>
                     <button onclick="logout()" 
-                            class="bg-white text-[#4CAF50] hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>Logout</span>
                     </button>

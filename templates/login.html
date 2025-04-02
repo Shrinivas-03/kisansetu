@@ -10,17 +10,25 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+            background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
                 url('https://images.unsplash.com/photo-1500382017468-9049fed747ef');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 1rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .form-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .form-input:focus {
+            background: rgba(255, 255, 255, 1);
         }
         .primary-button {
             background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
@@ -29,6 +37,9 @@
         .primary-button:hover {
             background: linear-gradient(135deg, #388E3C 0%, #2E7D32 100%);
         }
+        .text-content {
+            color: white;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center">
@@ -36,8 +47,8 @@
         <div class="text-center mb-8">
             <img src="https://img.icons8.com/color/96/000000/tractor.png" 
                  class="w-20 h-20 mx-auto" alt="KisanSetu Logo">
-            <h2 class="text-3xl font-bold text-green-800 mt-4">Welcome Back</h2>
-            <p class="text-gray-600 mt-2">Direct from Farm to Table</p>
+            <h2 class="text-3xl font-bold text-white mt-4">Welcome Back</h2>
+            <p class="text-gray-200 mt-2">Direct from Farm to Table</p>
         </div>
 
         <form method="POST" action="{{ url_for('login') }}" class="space-y-6">
@@ -57,10 +68,10 @@
             {% endwith %}
 
             <div>
-                <label class="block text-gray-700 font-medium mb-2">Email</label>
+                <label class="block text-white font-medium mb-2">Email</label>
                 <div class="relative">
                     <input type="email" id="customerEmail" name="email" required
-                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all pl-10">
+                           class="form-input w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all pl-10">
                     <span class="absolute left-3 top-3 text-gray-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -70,10 +81,10 @@
             </div>
 
             <div>
-                <label class="block text-gray-700 font-medium mb-2">Password</label>
+                <label class="block text-white font-medium mb-2">Password</label>
                 <div class="relative">
                     <input type="password" id="customerPassword" name="password" required
-                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all pl-10">
+                           class="form-input w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all pl-10">
                     <span class="absolute left-3 top-3 text-gray-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -88,8 +99,8 @@
             </button>
         </form>
 
-        <p class="mt-6 text-center text-sm text-gray-600">
-            Don't have an account? <a href="/signup" class="text-[#4CAF50] hover:text-[#388E3C] font-medium hover:underline">Sign Up</a>
+        <p class="mt-6 text-center text-sm text-gray-200">
+            Don't have an account? <a href="/signup" class="text-white hover:text-gray-300 font-medium hover:underline">Sign Up</a>
         </p>
     </div>
 

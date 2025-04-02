@@ -9,18 +9,55 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+            background: linear-gradient(to bottom right, #fff5f7, #ffe4e6);
         }
         .form-input {
-            @apply w-full p-3 border-2 border-gray-200 rounded-lg;
-            transition: all 0.3s ease;
+            @apply w-full p-5 border-2 border-gray-300 rounded-lg bg-white shadow-md transition-all ease-in-out;
+            font-size: 1.1rem;
+            letter-spacing: 0.01em;
         }
         .form-input:focus {
-            @apply border-green-500 ring-2 ring-green-500/20;
-            transform: translateY(-1px);
+            @apply border-green-500 ring-2 ring-green-500/50 bg-white shadow-lg;
+        }
+        .form-input::placeholder {
+            color: #9CA3AF;
+            opacity: 0.8;
+        }
+        textarea.form-input {
+            min-height: 200px;
+            line-height: 1.7;
+            padding: 1.25rem;
+            resize: vertical;
+        }
+        .input-label {
+            @apply block text-gray-700 font-semibold mb-2 text-sm;
+        }
+        .form-container {
+            background: linear-gradient(145deg, rgba(255, 192, 203, 0.1), rgba(255, 255, 255, 0.95));
+            backdrop-filter: blur(12px);
+            border-radius: 1rem;
+            box-shadow: 0 4px 32px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            margin: 2rem auto;
+            padding: 2rem;
+            transition: all 0.3s ease-in-out;
+        }
+        .image-upload-container {
+            min-height: 200px; /* Reduced from 300px */
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px dashed #ffb6c1;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .image-upload-container:hover {
+            border-color: #ff69b4;
+            background: rgba(255, 192, 203, 0.1);
         }
         .preview-card {
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
@@ -29,9 +66,84 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
         }
+        .form-section {
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(12px);
+            border-radius: 1rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            width: 100%;
+        }
+        .form-section input,
+        .form-section select,
+        .form-section textarea {
+            @apply mt-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500;
+            width: 100%;
+        }
+        .form-container .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        .form-container .submit-btn {
+            @apply w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-lg shadow-md transition-all ease-in-out;
+            font-size: 1.1rem;
+        }
+        .submit-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        #imagePreview {
+            max-height: 200px;
+            width: auto;
+            margin: 1rem auto;
+            border-radius: 0.5rem;
+            object-fit: contain;
+        }
+        .input-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .floating-label {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            padding: 0 0.25rem;
+            color: #6B7280;
+            transition: all 0.2s ease-in-out;
+            pointer-events: none;
+        }
+        .form-input:focus + .floating-label,
+        .form-input:not(:placeholder-shown) + .floating-label {
+            top: 0;
+            transform: translateY(-50%) scale(0.85);
+            background: white;
+            color: #4CAF50;
+        }
+        .form-input {
+            @apply w-full p-4 border-2 border-gray-300 rounded-lg;
+            transition: all 0.2s ease-in-out;
+        }
+        .form-input:focus {
+            @apply border-green-500 ring-2 ring-green-500/20;
+            transform: translateY(-1px);
+        }
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            transition: all 0.2s ease;
+        }
+        .form-input:focus ~ .input-icon {
+            color: #4CAF50;
+        }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-[#f5f7fa] to-[#e4e9f2]">
+<body class="min-h-screen">
     <script>
         fetch('/navbar')
             .then(response => response.text())
@@ -40,93 +152,144 @@
                 document.body.style.paddingTop = '60px';
             });
     </script>
-    <div class="max-w-3xl mx-auto p-5">
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 relative overflow-hidden mt-10">
-            <!-- Gradient Top Border -->
-            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 via-blue-500 to-red-500"></div>
 
-            <h2 class="text-2xl font-bold mb-8">Add New Product</h2>
+    <div class="max-w-4xl mx-auto p-5">
+        <div class="form-container">
+            <h2 class="text-4xl font-bold mb-8 text-gray-800 flex items-center gap-4 border-b pb-4">
+                <i class="fas fa-plus-circle text-green-600 text-4xl"></i>
+                Add New Product
+            </h2>
             
             <!-- Product Form -->
-            <form method="POST" action="{{ url_for('add_product_form') }}" enctype="multipart/form-data" class="space-y-6">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Product Name</label>
-                    <input type="text" id="productName" name="name" required
-                           class="form-input">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                    <select id="productCategory" name="category" required
-                            class="form-input">
-                        <option value="">Select Category</option>
-                        <option value="vegetables">Vegetables</option>
-                        <option value="fruits">Fruits</option>
-                        <option value="grains">Grains</option>
-                        <option value="pulses">Pulses</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Price per kg (₹)</label>
-                    <input type="number" id="productPrice" name="price" required
-                           class="form-input">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Available Stock (kg)</label>
-                    <input type="number" id="productStock" name="stock" required
-                           class="form-input">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Product Description</label>
-                    <textarea id="productDescription" name="description" rows="4" 
-                              class="form-input"
-                              placeholder="Describe your product's quality, benefits, storage instructions, etc."
-                              oninput="updatePreview()"></textarea>
-                    <div class="bg-blue-50 p-4 rounded-lg text-sm text-blue-500 mt-2">
-                        Suggested information to include:
-                        <ul class="list-disc pl-5">
-                            <li>Quality and freshness details</li>
-                            <li>Cultivation method (organic/traditional)</li>
-                            <li>Storage instructions</li>
-                            <li>Best uses and benefits</li>
-                            <li>Harvesting date/season</li>
-                        </ul>
+            <form method="POST" action="{{ url_for('add_product_form') }}" enctype="multipart/form-data" class="space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-section">
+                        <div class="input-container">
+                            <input type="text" 
+                                   id="productName" 
+                                   name="name" 
+                                   class="form-input pl-10" 
+                                   placeholder=" "
+                                   required>
+                            <label for="productName" class="floating-label">Product Name</label>
+                            <i class="fas fa-box input-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <div class="input-container">
+                            <select id="productCategory" 
+                                    name="category" 
+                                    class="form-input pl-10" 
+                                    required>
+                                <option value="" disabled selected>Select Category</option>
+                                <option value="vegetables">Vegetables</option>
+                                <option value="fruits">Fruits</option>
+                                <option value="grains">Grains</option>
+                                <option value="pulses">Pulses</option>
+                            </select>
+                            <i class="fas fa-tags input-icon"></i>
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Product Image</label>
-                    <input type="file" id="productImage" name="image" accept="image/*" 
-                           class="form-input"
-                           onchange="previewImage(event)">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-section">
+                        <div class="input-container">
+                            <input type="number" 
+                                   id="productPrice" 
+                                   name="price" 
+                                   class="form-input pl-10" 
+                                   placeholder=" "
+                                   required>
+                            <label for="productPrice" class="floating-label">Price per kg (₹)</label>
+                            <i class="fas fa-rupee-sign input-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <div class="input-container">
+                            <input type="number" 
+                                   id="productStock" 
+                                   name="stock" 
+                                   class="form-input pl-10" 
+                                   placeholder=" "
+                                   required>
+                            <label for="productStock" class="floating-label">Available Stock (kg)</label>
+                            <i class="fas fa-weight input-icon"></i>
+                        </div>
+                    </div>
                 </div>
-                <button type="submit" 
-                        class="bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-lg w-full mt-6 hover:shadow-lg">
-                    Add Product
+
+                <div class="form-section">
+                    <label class="input-label">Product Description</label>
+                    <textarea id="productDescription" name="description" class="form-input" placeholder="Describe your product's quality, benefits, storage instructions, etc." oninput="updatePreview()"></textarea>
+                </div>
+
+                <div class="form-section">
+                    <label class="input-label">Product Image</label>
+                    <div class="image-upload-container" onclick="handleImageUpload()">
+                        <div id="uploadPlaceholder" class="text-center">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-pink-400"></i>
+                            <p class="text-lg text-gray-600 mb-2">Click to upload product image</p>
+                            <p class="text-sm text-gray-400">PNG, JPG up to 5MB</p>
+                        </div>
+                        <input type="file" id="productImage" name="image" accept="image/*" class="hidden" onchange="previewImage(event)">
+                        <img id="imagePreview" class="hidden">
+                    </div>
+                    <div id="imageError" class="text-red-500 text-sm mt-2 hidden"></div>
+                </div>
+
+                <!-- Preview Section -->
+                <div class="form-section">
+                    <h3 class="section-title mb-4">Product Preview</h3>
+                    <div id="productPreview" class="border border-gray-300 p-4 rounded-lg bg-white/50">
+                        <img id="imagePreview" class="w-full h-48 object-cover rounded-lg hidden">
+                        <h3 id="previewName" class="text-lg font-semibold mt-4 text-gray-800"></h3>
+                        <p id="previewPrice" class="text-sm text-gray-600"></p>
+                        <div id="previewDescription" class="text-sm text-gray-500 mt-2"></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-plus-circle mr-3"></i> Add Product
                 </button>
             </form>
-
-            <!-- Preview Section -->
-            <div class="preview-card p-6 mt-6 transition hover:border-blue-500 hover:bg-white">
-                <div class="text-center text-sm font-medium text-gray-500 mb-4">Preview how it will appear to customers:</div>
-                <div id="productPreview" class="border border-gray-200 p-4 rounded-lg">
-                    <img id="imagePreview" class="w-full h-48 object-cover rounded-lg hidden">
-                    <h3 id="previewName" class="text-lg font-semibold mt-4"></h3>
-                    <p id="previewPrice" class="text-sm text-gray-600"></p>
-                    <div id="previewDescription" class="text-sm text-gray-500"></div>
-                </div>
-            </div>
         </div>
     </div>
 
     <script>
-        let imageDataUrl = '';
+        function handleImageUpload() {
+            document.getElementById('productImage').click();
+        }
 
         function previewImage(event) {
             const file = event.target.files[0];
+            const errorDiv = document.getElementById('imageError');
+            const preview = document.getElementById('imagePreview');
+            const placeholder = document.getElementById('uploadPlaceholder');
+
+            // Reset error message
+            errorDiv.classList.add('hidden');
+            
             if (file) {
+                // Validate file type
+                if (!file.type.match('image.*')) {
+                    errorDiv.textContent = 'Please upload an image file (PNG, JPG)';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    errorDiv.textContent = 'Image size should be less than 5MB';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    document.getElementById('imagePreview').src = e.target.result;
-                    document.getElementById('imagePreview').style.display = 'block';
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
                 };
                 reader.readAsDataURL(file);
             }
@@ -145,6 +308,75 @@
         // Add event listeners for real-time preview
         document.getElementById('productName').addEventListener('input', updatePreview);
         document.getElementById('productPrice').addEventListener('input', updatePreview);
+
+        // Add form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate required fields
+            const required = ['name', 'category', 'price', 'stock', 'description'];
+            const isValid = required.every(field => {
+                const input = this.elements[field];
+                if (!input.value.trim()) {
+                    showError(`Please fill in the ${field} field`);
+                    input.focus();
+                    return false;
+                }
+                return true;
+            });
+
+            // Validate image
+            const imageInput = document.getElementById('productImage');
+            if (!imageInput.files.length) {
+                showError('Please upload a product image');
+                return;
+            }
+
+            if (isValid) {
+                this.submit();
+            }
+        });
+
+        function showError(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        document.querySelectorAll('.form-input').forEach(input => {
+            // Auto-focus on click anywhere in the input container
+            input.parentElement.addEventListener('click', (e) => {
+                input.focus();
+            });
+
+            // Handle floating label animation
+            input.addEventListener('input', (e) => {
+                const label = input.nextElementSibling;
+                if (input.value.length > 0) {
+                    label.classList.add('active');
+                } else {
+                    label.classList.remove('active');
+                }
+            });
+        });
+
+        // Add number input validation
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', (e) => {
+                if (input.value < 0) {
+                    input.value = 0;
+                }
+            });
+
+            // Allow only numbers and prevent 'e' character
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
+                    e.preventDefault();
+                }
+            });
+        });
     </script>
 
     <script>
