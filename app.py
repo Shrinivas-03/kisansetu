@@ -648,7 +648,6 @@ def get_rejected_products():
 @app.route('/get_approved_products')
 def get_approved_products():
     try:
-        print("Fetching approved products...") # Debug log
         products = db.session.query(Product, User).join(
             User, Product.farmer_id == User.id
         ).filter(
@@ -656,30 +655,23 @@ def get_approved_products():
             Product.is_rejected == False
         ).all()
         
-        print(f"Found {len(products)} approved products") # Debug log
-        
-        if not products:
-            print("No approved products found") # Debug log
-            return jsonify([])
-            
         result = [{
-            'id': str(product.id),  # Convert to string to avoid JS integer issues
+            'id': str(product.id),
             'name': product.name,
             'category': product.category,
             'price': float(product.price),
             'stock': product.stock,
+            'stock_status': 'out_of_stock' if product.stock == 0 else 'low_stock' if product.stock <= 5 else 'in_stock',
             'description': product.description or '',
             'image_url': product.image_url or '',
             'farmer_id': product.farmer_id,
             'farmerName': user.name,
-            'rating': float(getattr(product, 'rating', 3.5)),
             'created_at': product.created_at.isoformat() if product.created_at else None
         } for product, user in products]
         
-        print(f"Returning {len(result)} products") # Debug log
         return jsonify(result)
     except Exception as e:
-        print(f"Error fetching approved products: {e}") # Debug log
+        print(f"Error fetching approved products: {e}")
         return jsonify({'error': str(e)}), 500
 
 # Add dummy data generation function
@@ -796,22 +788,155 @@ def cart():
 @app.route('/checkout')
 def checkout():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        flash('Please log in to proceed to checkout.')
+        return redirect(url_for('login'))  # Redirect to login if not logged in
     
     try:
-        # Get user details for pre-filling the form
+        # Get cart items with a single query
+        cart_items = db.session.query(Cart, Product)\
+            .join(Product, Cart.product_id == Product.id)\
+            .filter(Cart.user_id == session['user_id'])\
+            .all()
+        
+        if not cart_items:
+            flash('Your cart is empty. Add items to proceed to checkout.')
+            return redirect(url_for('cart'))  # Redirect to cart if empty
+        
+        # Get user details
         user = User.query.get(session['user_id'])
         if not user:
             flash('User not found. Please log in again.')
-            return redirect(url_for('login'))
+            return redirect(url_for('login'))  # Redirect to login if user not found
         
-        return render_template('checkout.html', user=user)
+        # Calculate totals
+        subtotal = sum(float(item.Product.price) * item.Cart.quantity for item in cart_items)
+        delivery_fee = 40  # Fixed delivery fee
+        total = subtotal + delivery_fee
+        
+        # Format cart items for display
+        formatted_items = [{
+            'id': item.Cart.id,
+            'product_id': item.Product.id,
+            'name': item.Product.name,
+            'price': float(item.Product.price),
+            'quantity': item.Cart.quantity,
+            'subtotal': float(item.Product.price * item.Cart.quantity)
+        } for item in cart_items]
+        
+        return render_template('checkout.html', 
+                               user=user,
+                               cart_items=formatted_items,
+                               subtotal=subtotal,
+                               delivery_fee=delivery_fee,
+                               total=total)
     except Exception as e:
         print(f"Error loading checkout page: {e}")
         flash('An error occurred while loading the checkout page. Please try again.')
-        return redirect(url_for('cart'))
+        return redirect(url_for('cart'))  # Redirect to cart on error
 
-# Update the place_order route
+@app.route('/check_stock', methods=['POST'])
+def check_stock():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+        
+    try:
+        data = request.json
+        items = data.get('items', [])
+        out_of_stock_items = []
+        
+        for item in items:
+            product = Product.query.get(item.get('product_id'))
+            if not product:
+                return jsonify({
+                    'success': False,
+                    'message': f'Product {item.get("name")} not found'
+                })
+            
+            if product.stock == 0:
+                out_of_stock_items.append(product.name)
+            elif product.stock < item.get('quantity', 0):
+                return jsonify({
+                    'success': False,
+                    'message': f'Not enough stock for {product.name}. Available: {product.stock}',
+                    'available_stock': product.stock
+                })
+        
+        if out_of_stock_items:
+            return jsonify({
+                'success': False,
+                'message': f'The following items are out of stock: {", ".join(out_of_stock_items)}',
+                'outOfStock': True
+            })
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        print(f"Error checking stock: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Error checking stock availability'
+        }), 500
+
+@app.route('/update_order_status', methods=['POST'])
+def update_order_status():
+    if 'user_id' not in session or session.get('user_type') != 'farmer':
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    try:
+        data = request.json
+        order_id = data.get('order_id')
+        new_status = data.get('status')
+        
+        # Find the order
+        order = Order.query.get_or_404(order_id)
+        
+        # Verify the order contains products from this farmer
+        order_items = order.items
+        farmer_id = session['user_id']
+        has_farmer_products = False
+        
+        for item in order_items:
+            product = db.session.get(Product, item.get('product_id'))
+            if product and product.farmer_id == farmer_id:
+                has_farmer_products = True
+                break
+        
+        if not has_farmer_products:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        # Update order status
+        order.status = new_status
+        if new_status == 'Delivered':
+            order.delivery_date = datetime.utcnow()
+        
+        db.session.commit()
+        
+        # Send email notification to customer
+        try:
+            msg = Message('Order Status Update - KisanSetu',
+                        recipients=[order.user.email])
+            msg.body = f'''
+            Your order #{order.id} has been marked as {new_status}.
+            
+            Thank you for shopping with KisanSetu!
+            '''
+            mail.send(msg)
+        except Exception as e:
+            print(f"Error sending email notification: {e}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Order status updated to {new_status}'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating order status: {e}")
+        return jsonify({
+            'error': str(e)
+        }), 500
+
+
 @app.route('/place_order', methods=['POST'])
 def place_order():
     if 'user_id' not in session:
@@ -819,6 +944,25 @@ def place_order():
         
     try:
         data = request.json
+        items = data.get('items', [])
+        
+        # Check stock availability again before placing order
+        for item in items:
+            product = db.session.get(Product, item.get('product_id'))
+            if not product:
+                return jsonify({
+                    'success': False,
+                    'message': f'Product {item.get("name")} not found'
+                })
+            
+            if product.stock < item.get('quantity', 0):
+                return jsonify({
+                    'success': False,
+                    'message': f'Not enough stock for {product.name}. Available: {product.stock}'
+                })
+            
+            # Update stock
+            product.stock -= item.get('quantity', 0)
         
         # Create new order
         order = Order(
@@ -827,11 +971,10 @@ def place_order():
             delivery_fee=data['delivery_fee'],
             payment_method=data['payment_method'],
             delivery_details=data['delivery_details'],
-            items=data['items'],
+            items=items,
             status='Pending'
         )
         
-        # Add to database
         db.session.add(order)
         db.session.commit()
         
@@ -1137,103 +1280,46 @@ def verify_fruit_id(fruit_id):
             'error': 'Failed to verify Fruit ID'
         }), 500
 
-# Cart Routes
-@app.route('/cart/add', methods=['POST'])
-def add_to_cart():
+
+
+# Add new route for deleting farmer products
+@app.route('/farmer/product/<product_id>/delete', methods=['POST'])
+def delete_farmer_product(product_id):
     if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-
+        return jsonify({'error': 'Unauthorized'}), 401
+    
     try:
-        data = request.json
-        product_id = data.get('product_id')
-        quantity = data.get('quantity', 1)
-
-        # Validate product_id and quantity
-        if not product_id or quantity < 1:
-            return jsonify({'error': 'Invalid product ID or quantity'}), 400
-
-        # Check if product exists
-        product = Product.query.get(product_id)
+        # Get farmer ID from session
+        farmer_id = session['user_id']
+        
+        # Connect to database
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        
+        # Check if product belongs to the farmer
+        cursor.execute('''
+            SELECT * FROM products 
+            WHERE id = %s AND farmer_id = %s
+        ''', (product_id, farmer_id))
+        
+        product = cursor.fetchone()
+        
         if not product:
-            return jsonify({'error': 'Product not found'}), 404
-
-        # Check if the product is already in the cart
-        cart_item = db.session.query(Cart).filter_by(user_id=session['user_id'], product_id=product_id).first()
-        if cart_item:
-            cart_item.quantity += quantity
-        else:
-            cart_item = Cart(user_id=session['user_id'], product_id=product_id, quantity=quantity)
-            db.session.add(cart_item)
-
-        db.session.commit()
-        return jsonify({'message': 'Product added to cart successfully'})
+            return jsonify({'error': 'Product not found or unauthorized'}), 404
+        
+        # Delete the product
+        cursor.execute('DELETE FROM products WHERE id = %s', (product_id,))
+        connection.commit()
+        
+        # Clean up
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'message': 'Product deleted successfully'})
+        
     except Exception as e:
-        db.session.rollback()
-        print(f"Error adding to cart: {e}")
-        return jsonify({'error': 'Failed to add product to cart'}), 500
-
-@app.route('/cart/update', methods=['POST'])
-def update_cart():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-
-    try:
-        data = request.json
-        product_id = data.get('product_id')
-        quantity = data.get('quantity')
-
-        # Check if the cart item exists
-        cart_item = db.session.query(Cart).filter_by(user_id=session['user_id'], product_id=product_id).first()
-        if not cart_item:
-            return jsonify({'error': 'Cart item not found'}), 404
-
-        if quantity <= 0:
-            db.session.delete(cart_item)
-        else:
-            cart_item.quantity = quantity
-
-        db.session.commit()
-        return jsonify({'message': 'Cart updated successfully'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/cart/remove/<int:product_id>', methods=['DELETE'])
-def remove_from_cart(product_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-
-    try:
-        cart_item = db.session.query(Cart).filter_by(user_id=session['user_id'], product_id=product_id).first()
-        if not cart_item:
-            return jsonify({'error': 'Cart item not found'}), 404
-
-        db.session.delete(cart_item)
-        db.session.commit()
-        return jsonify({'message': 'Product removed from cart successfully'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/cart/items', methods=['GET'])
-def get_cart_items():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-
-    try:
-        cart_items = db.session.query(Cart, Product).join(Product, Cart.product_id == Product.id).filter(Cart.user_id == session['user_id']).all()
-        result = [{
-            'product_id': item.Product.id,
-            'name': item.Product.name,
-            'price': float(item.Product.price),
-            'quantity': item.Cart.quantity,
-            'image_url': item.Product.image_url,
-            'total_price': float(item.Product.price) * item.Cart.quantity
-        } for item in cart_items]
-
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error deleting product: {e}")
+        return jsonify({'error': 'Failed to delete product'}), 500
 
 @app.route('/get_farmer_sales_summary/<int:farmer_id>')
 def get_farmer_sales_summary(farmer_id):
@@ -1256,7 +1342,7 @@ def get_farmer_sales_summary(farmer_id):
             # Process each item in the order
             for item in items:
                 # Check if this item belongs to the farmer
-                product = Product.query.get(item.get('product_id'))
+                product = db.session.get(Product, item.get('product_id'))
                 if product and product.farmer_id == farmer_id:
                     farmer_items.append(item)
                     # Calculate item total
@@ -1427,7 +1513,32 @@ def submit_kyc():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-# Add KYC verification route
+@app.route('/farmer/remove_product/<product_id>', methods=['POST', 'DELETE'])
+def remove_farmer_product(product_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        # Get farmer ID from session
+        farmer_id = session['user_id']
+        
+        # Get product and verify ownership
+        product = Product.query.filter_by(id=product_id, farmer_id=farmer_id).first()
+        
+        if not product:
+            return jsonify({'error': 'Product not found or unauthorized'}), 404
+        
+        # Delete the product
+        db.session.delete(product)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Product deleted successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting product: {e}")
+        return jsonify({'error': 'Failed to delete product'}), 500
+
 @app.route('/kyc-verification')
 def kyc_verification():
     if 'user_id' not in session:
@@ -1559,6 +1670,196 @@ def reject_kyc(kyc_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@app.route('/cart/add', methods=['POST'])
+def add_to_cart():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please login first'}), 401
+
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+
+        product_id = data.get('product_id')
+        quantity = data.get('quantity', 1)
+
+        # Get product and check stock
+        product = Product.query.get(product_id)
+        if not product:
+            return jsonify({'success': False, 'message': 'Product not found'}), 404
+
+        # Get current cart item if exists
+        cart_item = Cart.query.filter_by(
+            user_id=session['user_id'],
+            product_id=product_id
+        ).first()
+
+        # Calculate total requested quantity
+        current_quantity = cart_item.quantity if cart_item else 0
+        new_total_quantity = current_quantity + quantity
+
+        # Check if product is out of stock
+        if product.stock == 0:
+            return jsonify({
+                'success': False,
+                'message': 'Product is out of stock',
+                'available_stock': 0
+            }), 400
+
+        # Check if enough stock is available
+        if new_total_quantity > product.stock:
+            return jsonify({
+                'success': False,
+                'message': f'Cannot add more. Only {product.stock - current_quantity} more items available',
+                'available_stock': product.stock,
+                'current_cart_quantity': current_quantity,
+                'remaining_available': product.stock - current_quantity
+            }), 400
+
+        # Update or create cart item
+        if cart_item:
+            cart_item.quantity = new_total_quantity
+        else:
+            cart_item = Cart(
+                user_id=session['user_id'],
+                product_id=product_id,
+                quantity=quantity
+            )
+            db.session.add(cart_item)
+
+        db.session.commit()
+
+        # Get updated cart count
+        cart_count = Cart.query.filter_by(user_id=session['user_id']).count()
+
+        return jsonify({
+            'success': True,
+            'message': 'Product added to cart successfully',
+            'cartCount': cart_count,
+            'current_quantity': new_total_quantity,
+            'available_stock': product.stock,
+            'remaining_stock': product.stock - new_total_quantity
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error adding to cart: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/cart/items')
+def get_cart_items():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+        
+    try:
+        # Get cart items with product details
+        cart_items = db.session.query(Cart, Product)\
+            .join(Product, Cart.product_id == Product.id)\
+            .filter(Cart.user_id == session['user_id'])\
+            .all()
+            
+        return jsonify([{
+            'id': item.Cart.id,
+            'product_id': item.Product.id,
+            'name': item.Product.name,
+            'price': float(item.Product.price),
+            'quantity': item.Cart.quantity,
+            'stock': item.Product.stock,
+            'image_url': item.Product.image_url,
+            'subtotal': float(item.Product.price * item.Cart.quantity)
+        } for item in cart_items])
+    except Exception as e:
+        print(f"Error fetching cart items: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/cart/update', methods=['POST'])
+def update_cart():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+        
+    try:
+        data = request.get_json()
+        product_id = data.get('product_id')
+        quantity = data.get('quantity', 0)
+        
+        # Get product to check stock
+        product = Product.query.get(product_id)
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+            
+        # Check if enough stock available
+        if quantity > product.stock:
+            return jsonify({
+                'error': f'Only {product.stock} items available'
+            }), 400
+            
+        # Update cart item
+        cart_item = Cart.query.filter_by(
+            user_id=session['user_id'],
+            product_id=product_id
+        ).first()
+        
+        if cart_item:
+            cart_item.quantity = quantity
+            db.session.commit()
+            
+        return jsonify({
+            'success': True,
+            'message': 'Cart updated successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/cart/remove/<int:product_id>', methods=['DELETE'])
+def remove_from_cart(product_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+        
+    try:
+        Cart.query.filter_by(
+            user_id=session['user_id'],
+            product_id=product_id
+        ).delete()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Item removed from cart'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/refill_stock/<int:product_id>', methods=['POST'])
+def refill_stock(product_id):
+    if 'user_id' not in session or session.get('user_type') != 'farmer':
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        data = request.json
+        new_stock = data.get('stock')
+
+        if not new_stock or new_stock <= 0:
+            return jsonify({'error': 'Invalid stock quantity'}), 400
+
+        product = Product.query.filter_by(id=product_id, farmer_id=session['user_id']).first()
+        if not product:
+            return jsonify({'error': 'Product not found or unauthorized'}), 404
+
+        product.stock = new_stock
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Stock refilled successfully'})
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error refilling stock: {e}")
+        return jsonify({'error': 'Failed to refill stock'}), 500
 
 if __name__ == '__main__':
     pymysql.install_as_MySQLdb()

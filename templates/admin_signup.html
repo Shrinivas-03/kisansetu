@@ -9,17 +9,34 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+                url('https://images.unsplash.com/photo-1500382017468-9049fed747ef');
             background-size: cover;
             background-position: center;
+            background-attachment: fixed;
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
         .input-group {
             position: relative;
             margin-bottom: 1.5rem;
+        }
+        .input-group input, 
+        .input-group select {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+        .input-group input:focus,
+        .input-group select:focus {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.15);
         }
         .input-icon {
             position: absolute;
@@ -28,13 +45,18 @@
             transform: translateY(-50%);
             color: #4CAF50;
         }
+        .form-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center py-12">
-    <div class="glass-card p-8 rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="glass-card p-8 rounded-2xl w-full max-w-md mx-4">
         <div class="flex items-center justify-center mb-8">
-            <img src="https://img.icons8.com/color/96/000000/tractor.png" class="w-16 h-16" alt="KisanSetu Logo">
-            <h2 class="text-3xl font-bold text-[#2C5F2D] ml-4">Admin Registration</h2>
+            <img src="https://img.icons8.com/color/96/000000/tractor.png" class="w-16 h-16 filter drop-shadow-lg" alt="KisanSetu Logo">
+            <h2 class="text-3xl font-bold text-white ml-4 text-shadow">Admin Registration</h2>
         </div>
         
         {% with messages = get_flashed_messages() %}
@@ -48,39 +70,39 @@
         <form method="POST" action="{{ url_for('admin_signup') }}" class="space-y-6">
             <div class="space-y-4">
                 <div class="input-group">
-                    <label class="block text-gray-700 font-medium mb-2">Full Name</label>
+                    <label class="block form-label mb-2">Full Name</label>
                     <input type="text" name="name" required 
-                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
+                           class="w-full p-3 border-2 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
                 </div>
                 <div class="input-group">
-                    <label class="block text-gray-700 font-medium mb-2">Email</label>
+                    <label class="block form-label mb-2">Email</label>
                     <input type="email" name="email" required 
-                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
+                           class="w-full p-3 border-2 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
                 </div>
                 <div class="input-group">
-                    <label class="block text-gray-700 font-medium mb-2">Password</label>
+                    <label class="block form-label mb-2">Password</label>
                     <input type="password" name="password" required minlength="8"
-                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
+                           class="w-full p-3 border-2 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
                 </div>
                 <div class="input-group">
-                    <label class="block text-gray-700 font-medium mb-2">Confirm Password</label>
+                    <label class="block form-label mb-2">Confirm Password</label>
                     <input type="password" name="confirm_password" required minlength="8"
-                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
+                           class="w-full p-3 border-2 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all">
                 </div>
                 <div class="input-group">
-                    <label class="block text-gray-700 font-medium mb-2">Admin Key</label>
+                    <label class="block form-label mb-2">Admin Key</label>
                     <input type="password" name="admin_key" required
-                           class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all"
+                           class="w-full p-3 border-2 rounded-lg focus:border-[#4CAF50] focus:ring-2 focus:ring-[#4CAF50]/20 transition-all"
                            placeholder="Enter admin registration key">
                 </div>
             </div>
             <button type="submit" 
-                    class="w-full bg-[#4CAF50] text-white py-3 rounded-lg hover:bg-[#388E3C] transform hover:scale-[1.02] transition-all duration-200 font-medium text-lg">
+                    class="w-full bg-[#4CAF50]/90 hover:bg-[#4CAF50] text-white py-3 rounded-lg transform hover:scale-[1.02] transition-all duration-200 font-medium text-lg backdrop-blur-sm">
                 Register
             </button>
         </form>
-        <p class="mt-6 text-center text-sm text-gray-600">
-            Already have an account? <a href="{{ url_for('admin_login') }}" class="text-[#4CAF50] hover:text-[#388E3C] font-medium hover:underline">Login</a>
+        <p class="mt-6 text-center text-sm text-white/80">
+            Already have an account? <a href="{{ url_for('admin_login') }}" class="text-white hover:text-gray-200 font-medium hover:underline">Login</a>
         </p>
     </div>
 </body>

@@ -235,7 +235,7 @@
                     }
 
                     productsList.innerHTML = products.length ? products.map(product => `
-                        <div class="border p-4 rounded-lg hover:shadow-md transition-duration-300">
+                        <div class="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
                             <div class="flex items-start gap-4">
                                 <img src="${product.image_url}" 
                                      alt="${product.name}" 
@@ -249,7 +249,24 @@
                                     <div class="mt-2 flex items-center gap-2">
                                         ${getProductStatus(product)}
                                     </div>
+                                    <div class="mt-4">
+                                        ${product.stock === 0 ? `
+                                            <button onclick="refillStock(${product.id})"
+                                                    class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                                                Refill Stock
+                                            </button>
+                                        ` : `
+                                            <button disabled class="bg-gray-300 text-gray-500 px-4 py-2 rounded-lg cursor-not-allowed">
+                                                Stock Available
+                                            </button>
+                                        `}
+                                    </div>
                                 </div>
+                                <!-- Add remove button -->
+                                <button onclick="removeProduct('${product.id}')"
+                                        class="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                         </div>
                     `).join('') : '<p class="text-gray-500 col-span-full text-center">No products listed yet</p>';
@@ -259,6 +276,36 @@
                     document.getElementById('productsList').innerHTML = 
                         '<p class="text-red-500 col-span-full text-center">Error loading products. Please try again later.</p>';
                 });
+        }
+
+        async function refillStock(productId) {
+            const newStock = prompt('Enter the new stock quantity:');
+            if (!newStock || isNaN(newStock) || newStock <= 0) {
+                alert('Please enter a valid stock quantity.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/refill_stock/${productId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ stock: parseInt(newStock) }),
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Stock refilled successfully!');
+                    loadProducts(); // Reload products to reflect changes
+                } else {
+                    throw new Error(result.error || 'Failed to refill stock');
+                }
+            } catch (error) {
+                console.error('Error refilling stock:', error);
+                alert('Failed to refill stock. Please try again.');
+            }
         }
 
         function getProductStatus(product) {
@@ -288,6 +335,51 @@
                     </span>
                 `;
             }
+        }
+
+        async function removeProduct(productId) {
+            if (!confirm('Are you sure you want to remove this product?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/farmer/remove_product/${productId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Product removed successfully');
+                    loadProducts(); // Refresh the products list
+                } else {
+                    throw new Error(result.message || 'Failed to remove product');
+                }
+            } catch (error) {
+                console.error('Error removing product:', error);
+                showNotification('Failed to remove product', 'error');
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 p-4 rounded-lg ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            } text-white shadow-lg z-50`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
         }
 
         function reapplyProduct(productId) {
@@ -342,6 +434,12 @@
                                             'bg-green-100 text-green-800'
                                         }">${order.status}</span>
                                     </p>
+                                    ${order.status !== 'Delivered' ? `
+                                        <button onclick="updateOrderStatus(${order.id}, 'Delivered')"
+                                                class="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">
+                                            <i class="fas fa-truck mr-2"></i>Mark as Delivered
+                                        </button>
+                                    ` : ''}
                                 </div>
                             </div>
                         `).join('');
@@ -352,6 +450,44 @@
                 .catch(error => {
                     console.error('Error loading sales summary:', error);
                 });
+        }
+
+        async function updateOrderStatus(orderId, status) {
+            if (!confirm(`Are you sure you want to mark this order as ${status}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/update_order_status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        status: status
+                    }),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    showNotification('Order status updated successfully');
+                    // Refresh the page after 1 second to show updated status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(result.message || 'Failed to update order status');
+                }
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                showNotification(error.message || 'Failed to update order status', 'error');
+            }
         }
 
         // Call loadSalesSummary every 30 seconds

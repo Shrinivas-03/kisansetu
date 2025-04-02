@@ -43,6 +43,7 @@
         .checkout-btn {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             transition: all 0.3s ease;
+            opacity: 1; /* Make button visible by default */
         }
 
         .checkout-btn:hover {
@@ -170,133 +171,210 @@
         async function loadCart() {
             try {
                 const response = await fetch('/cart/items', { credentials: 'include' });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const cartItems = await response.json();
-
-                const container = document.getElementById('cartItems');
-                const summary = document.getElementById('cartSummary');
-
-                if (!cartItems || cartItems.length === 0) {
-                    container.innerHTML = `
+                if (!response.ok) throw new Error('Failed to fetch cart items');
+                
+                const items = await response.json();
+                const cartItems = document.getElementById('cartItems');
+                const cartSummary = document.getElementById('cartSummary');
+                
+                if (!items || items.length === 0) {
+                    cartItems.innerHTML = `
                         <div class="text-center py-8">
                             <i class="fas fa-shopping-cart text-gray-400 text-5xl mb-4"></i>
                             <p class="text-gray-500">Your cart is empty</p>
-                            <a href="/customer/dashboard" class="inline-block mt-4 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                            <a href="/customer/dashboard" 
+                               class="inline-block mt-4 px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
                                 Continue Shopping
                             </a>
-                        </div>`;
-                    summary.innerHTML = '';
+                        </div>
+                    `;
+                    if (cartSummary) cartSummary.classList.add('hidden');
                     return;
                 }
 
-                container.innerHTML = cartItems.map(item => `
-                    <div class="flex items-center justify-between border-b pb-4 product-card">
-                        <div class="flex items-center space-x-4">
-                            <img src="${item.image_url || 'https://via.placeholder.com/80'}" 
-                                 alt="${item.name}"
-                                 class="w-20 h-20 object-cover rounded">
-                            <div>
-                                <h3 class="font-semibold">${item.name}</h3>
-                                <p class="text-gray-600">₹${item.price}/kg</p>
+                // Display cart items
+                cartItems.innerHTML = items.map(item => `
+                    <div class="flex items-center gap-4 p-4 border rounded-lg mb-4 hover:shadow-md transition-shadow">
+                        <img src="${item.image_url || 'https://via.placeholder.com/100'}" 
+                             alt="${item.name}"
+                             class="w-24 h-24 object-cover rounded-lg"
+                             onerror="this.src='https://via.placeholder.com/100'">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-lg">${item.name}</h3>
+                            <p class="text-green-600">₹${item.price.toFixed(2)}/kg</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <button onclick="updateQuantity(${item.product_id}, ${item.quantity - 1})"
+                                        class="quantity-btn rounded px-3 py-1 bg-gray-100 hover:bg-green-500 hover:text-white transition-colors"
+                                        ${item.quantity <= 1 ? 'disabled style="opacity: 0.5;"' : ''}>
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <span class="px-4 py-1 border rounded">${item.quantity}</span>
+                                <button onclick="updateQuantity(${item.product_id}, ${item.quantity + 1})"
+                                        class="quantity-btn rounded px-3 py-1 bg-gray-100 hover:bg-green-500 hover:text-white transition-colors"
+                                        ${item.quantity >= item.stock ? 'disabled style="opacity: 0.5;"' : ''}>
+                                    <i class="fas fa-plus"></i>
+                                </button>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-4">
-                            <div class="flex items-center border rounded">
-                                <button onclick="updateCart(${item.product_id}, ${item.quantity - 1})"
-                                        class="quantity-btn">-</button>
-                                <span class="px-4 py-1 border-x">${item.quantity}</span>
-                                <button onclick="updateCart(${item.product_id}, ${item.quantity + 1})"
-                                        class="quantity-btn">+</button>
-                            </div>
-                            <p class="font-semibold">₹${item.total_price.toFixed(2)}</p>
+                        <div class="text-right">
+                            <p class="font-bold">₹${item.subtotal.toFixed(2)}</p>
                             <button onclick="removeFromCart(${item.product_id})"
-                                    class="text-red-500 hover:text-red-700">
-                                <i class="fas fa-trash"></i>
+                                    class="mt-2 text-red-500 hover:text-red-700 transition-colors">
+                                <i class="fas fa-trash"></i> Remove
                             </button>
                         </div>
                     </div>
                 `).join('');
 
-                const total = cartItems.reduce((sum, item) => sum + item.total_price, 0);
-                summary.innerHTML = `
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-lg font-semibold">Total:</span>
-                        <span class="text-2xl font-bold">₹${total.toFixed(2)}</span>
-                    </div>
-                    <button onclick="checkout()"
-                            class="cart-action w-full text-white py-3 rounded-lg hover:bg-[#F57C00] transition-all">
-                        Proceed to Checkout
-                    </button>`;
+                // Update summary
+                if (cartSummary) {
+                    const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+                    const deliveryFee = 40;
+                    const total = subtotal + deliveryFee;
+
+                    cartSummary.classList.remove('hidden');
+                    cartSummary.innerHTML = `
+                        <div class="border-t pt-4">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-600">Subtotal</span>
+                                <span>₹${subtotal.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-600">Delivery Fee</span>
+                                <span>₹${deliveryFee.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between font-bold text-lg border-t pt-2">
+                                <span>Total</span>
+                                <span>₹${total.toFixed(2)}</span>
+                            </div>
+                            <button onclick="proceedToCheckout()" 
+                                    class="w-full mt-4 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors">
+                                Proceed to Checkout (₹${total.toFixed(2)})
+                            </button>
+                        </div>
+                    `;
+                }
             } catch (error) {
                 console.error('Error loading cart:', error);
-                const container = document.getElementById('cartItems');
-                container.innerHTML = `
-                    <div class="text-center py-8">
-                        <p class="text-red-500">Failed to load cart. Please try again later.</p>
-                    </div>`;
+                showNotification('Failed to load cart items', 'error');
             }
         }
 
-        async function updateCart(productId, quantity) {
-            if (quantity < 1) {
-                removeFromCart(productId);
+        async function updateQuantity(productId, newQuantity) {
+            if (newQuantity < 1) {
+                await removeFromCart(productId);
                 return;
             }
 
             try {
                 const response = await fetch('/cart/update', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ product_id: productId, quantity })
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        quantity: newQuantity
+                    }),
+                    credentials: 'include'
                 });
+
                 const result = await response.json();
-                if (result.message) {
-                    loadCart();
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to update cart');
                 }
+
+                // Reload cart to show updated quantities
+                loadCart();
+                showNotification('Cart updated successfully');
             } catch (error) {
                 console.error('Error updating cart:', error);
+                showNotification(error.message || 'Failed to update cart', 'error');
             }
         }
 
         async function removeFromCart(productId) {
+            if (!confirm('Are you sure you want to remove this item?')) {
+                return;
+            }
+
             try {
-                const response = await fetch(`/cart/remove/${productId}`, { method: 'DELETE' });
+                const response = await fetch(`/cart/remove/${productId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
                 const result = await response.json();
-                if (result.message) {
-                    loadCart();
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to remove item');
                 }
+
+                loadCart();
+                showNotification('Item removed from cart');
             } catch (error) {
-                console.error('Error removing from cart:', error);
+                console.error('Error removing item:', error);
+                showNotification(error.message || 'Failed to remove item', 'error');
             }
         }
 
-        async function checkout() {
+        async function proceedToCheckout() {
+            const checkoutBtn = document.querySelector('button[onclick="proceedToCheckout()"]');
+            if (checkoutBtn) {
+                // Disable button and show loading state
+                checkoutBtn.disabled = true;
+                checkoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            }
+
             try {
                 const response = await fetch('/cart/items', { credentials: 'include' });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const cartItems = await response.json();
+                if (!response.ok) throw new Error('Failed to fetch cart items');
 
-                if (!cartItems || cartItems.length === 0) {
-                    alert('Your cart is empty. Please add items to proceed.');
+                const items = await response.json();
+                if (!items || items.length === 0) {
+                    showNotification('Your cart is empty', 'error');
+                    if (checkoutBtn) {
+                        checkoutBtn.disabled = false;
+                        checkoutBtn.innerHTML = 'Proceed to Checkout';
+                    }
                     return;
                 }
 
-                // Save cart items to localStorage for checkout
-                localStorage.setItem('checkoutCart', JSON.stringify(cartItems));
-
-                // Navigate to the checkout page
+                // Redirect to checkout page
                 window.location.href = '/checkout';
             } catch (error) {
-                console.error('Error during checkout:', error);
-                alert('An error occurred. Please try again.');
+                console.error('Error checking cart:', error);
+                showNotification('Error processing checkout. Please try again.', 'error');
+                if (checkoutBtn) {
+                    checkoutBtn.disabled = false;
+                    checkoutBtn.innerHTML = 'Proceed to Checkout';
+                }
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadCart);
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 10px 20px;
+                border-radius: 4px;
+                z-index: 1000;
+                ${type === 'success' ? 
+                    'background: #4CAF50; color: white;' : 
+                    'background: #f44336; color: white;'}
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // Initialize cart on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCart();
+            setupEventListeners();
+        });
 
         // Add the menu toggle and logout functions
         function toggleMenu() {
@@ -352,6 +430,12 @@
                 icon.style.transform = 'rotate(0deg)';
             }
         });
+
+        function setupEventListeners() {
+            // Add any event listeners needed for the cart page
+            document.getElementById('mobileMenu')?.addEventListener('click', toggleMenu);
+            document.getElementById('profileButton')?.addEventListener('click', toggleProfileMenu);
+        }
     </script>
 </body>
 </html>
