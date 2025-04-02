@@ -70,8 +70,7 @@
         <div class="bg-gradient-to-br from-pink-100 to-pink-50 backdrop-blur-sm rounded-2xl shadow-xl p-6">
             <div class="flex justify-between items-center mb-6">
                 <div class="flex items-center gap-2">
-                    <img src="https://img.icons8.com/color/96/000000/tractor.png" 
-                         class="w-10 h-10" alt="KisanSetu Logo">
+                   
                     <h1 class="text-3xl md:text-4xl font-bold text-white">KisanSetu</h1>
                 </div>
                 <div class="flex gap-4">
@@ -112,6 +111,31 @@
             constructor() {
                 this.loadOrders();
                 this.setupEventListeners();
+                this.initializeCart();
+            }
+
+            async initializeCart() {
+                try {
+                    const response = await fetch('/cart/items', {
+                        credentials: 'include',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const cartItems = await response.json();
+                    localStorage.setItem('cart', JSON.stringify(cartItems));
+                } catch (error) {
+                    console.error('Error initializing cart:', error);
+                    // Initialize empty cart if fetch fails
+                    if (!localStorage.getItem('cart')) {
+                        localStorage.setItem('cart', JSON.stringify([]));
+                    }
+                }
             }
 
             setupEventListeners() {
@@ -127,19 +151,35 @@
                     }
                     
                     const response = await fetch(url, {
-                        credentials: 'include'
+                        credentials: 'include',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
                     });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
                     const orders = await response.json();
-
-                    // Filter orders based on status
-                    const filteredOrders = status === 'all' ? 
-                        orders : 
-                        orders.filter(order => order.status === status);
-
-                    this.displayOrders(filteredOrders);
+                    this.displayOrders(orders);
                 } catch (error) {
                     console.error('Error loading orders:', error);
-                    this.showError('Failed to load orders');
+                    this.showError('Failed to load orders. Please try refreshing the page.');
+                    
+                    // Show user-friendly error message in the orders container
+                    const container = document.getElementById('ordersList');
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="col-span-full text-center py-8">
+                                <i class="fas fa-exclamation-circle text-red-500 text-5xl mb-4"></i>
+                                <p class="text-gray-700">Unable to load your orders</p>
+                                <button onclick="window.location.reload()" 
+                                        class="mt-4 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                                    Try Again
+                                </button>
+                            </div>`;
+                    }
                 }
             }
 
@@ -190,6 +230,10 @@
                                         <p class="text-sm font-medium truncate">${item.name}</p>
                                         <p class="text-xs text-gray-600">Qty: ${item.quantity}</p>
                                     </div>
+                                    <button onclick="showFarmerInfo(${JSON.stringify(item.farmer)})" 
+                                            class="text-blue-600 hover:text-blue-800 text-sm">
+                                        View Details
+                                    </button>
                                 </div>
                             `).join('')}
                             ${order.items.length > 2 ? 
@@ -318,6 +362,83 @@
             const orders = JSON.parse(localStorage.getItem('currentOrders') || '[]');
             const sorted = ordersManager.sortOrders(orders, e.target.value);
             ordersManager.displayOrders(sorted);
+        });
+    </script>
+
+    <div id="farmerInfoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 relative">
+            <!-- Close button -->
+            <button onclick="closeFarmerInfo()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            
+            <!-- Farmer Info Content -->
+            <div class="mb-4 text-center">
+                <img id="farmerImage" class="w-20 h-20 rounded-full mx-auto mb-3" src="" alt="Farmer">
+                <h3 id="farmerName" class="text-xl font-bold text-gray-800"></h3>
+                <p id="farmerLocation" class="text-gray-600 text-sm"></p>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <h4 class="font-semibold text-gray-700">About the Product</h4>
+                    <p id="productDescription" class="text-gray-600 text-sm mt-1"></p>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-700">Farming Method</h4>
+                    <p id="farmingMethod" class="text-gray-600 text-sm mt-1"></p>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-700">Contact Information</h4>
+                    <p id="farmerContact" class="text-gray-600 text-sm mt-1"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showFarmerInfo(farmer) {
+            // Update modal content
+            document.getElementById('farmerImage').src = farmer.image;
+            document.getElementById('farmerName').textContent = farmer.name;
+            document.getElementById('farmerLocation').textContent = farmer.location;
+            document.getElementById('productDescription').textContent = farmer.description || 'No description available';
+            document.getElementById('farmingMethod').textContent = farmer.farmingMethod;
+            document.getElementById('farmerContact').textContent = farmer.contact;
+
+            // Show modal with fade-in animation
+            const modal = document.getElementById('farmerInfoModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.style.opacity = '1';
+                modal.style.transition = 'opacity 0.3s ease-in-out';
+            }, 10);
+        }
+
+        function closeFarmerInfo() {
+            // Hide modal with fade-out animation
+            const modal = document.getElementById('farmerInfoModal');
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('farmerInfoModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeFarmerInfo();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeFarmerInfo();
+            }
         });
     </script>
 </body>
