@@ -3,113 +3,341 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout - KisanSetu</title>
+    <title>Kisansetu - Checkout</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        }
+
+        .form-input {
+            @apply w-full p-3 border-2 border-gray-200 rounded-lg;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            @apply border-[#4CAF50] ring-2 ring-[#4CAF50]/20;
+            transform: translateY(-1px);
+        }
+
+        .payment-option {
+            transition: all 0.3s ease;
+        }
+
+        .payment-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Delivery Details -->
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="text-2xl font-bold mb-4">Delivery Details</h2>
-                <form id="checkoutForm" class="space-y-4">
-                    <div>
-                        <label class="block text-gray-700">Full Name</label>
-                        <input type="text" name="name" value="{{ user.name }}" 
-                               class="w-full border p-2 rounded" required>
+<body class="bg-gradient-to-br from-[#f5f7fa] to-[#e4e9f2]">
+    <script>
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('afterbegin', html);
+                document.body.style.paddingTop = '60px';
+            });
+    </script>
+    <!-- Navbar -->
+    <nav class="bg-[#4CAF50] text-white fixed top-0 left-0 right-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold">Checkout</h1>
+            
+            <!-- Hamburger Button -->
+            <button class="lg:hidden text-white focus:outline-none" onclick="toggleMenu()">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+
+            <!-- Desktop Navigation -->
+            <div class="hidden lg:block">
+                <a href="cart.html" class="text-white hover:text-gray-200 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Cart
+                </a>
+            </div>
+
+            <!-- Mobile Navigation -->
+            <div id="mobileMenu" class="fixed top-[60px] left-0 right-0 bg-[#4CAF50] p-4 hidden lg:hidden">
+                <a href="cart.html" class="text-white block py-2 hover:bg-blue-700 px-4 rounded">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Cart
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 pt-24 pb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Delivery Information -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Delivery Address -->
+                <div class="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8">
+                    <h2 class="text-lg font-bold mb-4">Delivery Address</h2>
+                    <form id="addressForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <input type="text" id="fullName" required
+                                       class="form-input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                <input type="tel" id="phone" pattern="[0-9]{10}" required
+                                       class="form-input">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                            <input type="text" id="address" required
+                                   class="form-input">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                <input type="text" id="city" required
+                                       class="form-input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+                                <input type="text" id="state" required
+                                       class="form-input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">PIN Code</label>
+                                <input type="text" id="pincode" pattern="[0-9]{6}" required
+                                       class="form-input">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8">
+                    <h2 class="text-lg font-bold mb-4">Payment Method</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center p-4 border rounded-lg payment-option">
+                            <input type="radio" name="payment" id="cod" value="cod" checked
+                                   class="h-4 w-4 text-[#4CAF50]">
+                            <label for="cod" class="ml-3">
+                                <span class="block text-sm font-medium text-gray-700">Cash on Delivery</span>
+                                <span class="block text-sm text-gray-500">Pay when you receive your order</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center p-4 border rounded-lg bg-gray-50 payment-option">
+                            <input type="radio" name="payment" id="online" value="online" disabled
+                                   class="h-4 w-4 text-blue-600">
+                            <label for="online" class="ml-3">
+                                <span class="block text-sm font-medium text-gray-400">Online Payment (Coming Soon)</span>
+                                <span class="block text-sm text-gray-400">Pay with card, UPI, or net banking</span>
+                            </label>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-gray-700">Phone Number</label>
-                        <input type="tel" name="phone" value="{{ user.phone }}" 
-                               class="w-full border p-2 rounded" required>
-                    </div>
-                    <div>
-                        <label class="block text-gray-700">Delivery Address</label>
-                        <textarea name="address" class="w-full border p-2 rounded" 
-                                rows="3" required></textarea>
-                    </div>
-                </form>
+                </div>
             </div>
 
             <!-- Order Summary -->
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="text-2xl font-bold mb-4">Order Summary</h2>
-                <div class="space-y-4">
-                    {% for cart_item, product in cart_items %}
-                    <div class="flex items-center justify-between border-b pb-2">
-                        <div>
-                            <h3 class="font-semibold">{{ product.name }}</h3>
-                            <p class="text-gray-600">Quantity: {{ cart_item.quantity }}</p>
-                        </div>
-                        <p class="font-bold">₹{{ "%.2f"|format(product.price * cart_item.quantity) }}</p>
+            <div class="space-y-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-lg font-bold mb-4">Order Summary</h2>
+                    <div id="orderItems" class="divide-y space-y-4">
+                        <!-- Order items will be loaded here -->
                     </div>
-                    {% endfor %}
-                    
-                    <div class="border-t pt-4 space-y-2">
-                        <div class="flex justify-between">
+                    <div class="border-t mt-4 pt-4 space-y-2">
+                        <div class="flex justify-between text-sm">
                             <span>Subtotal</span>
-                            <span>₹{{ "%.2f"|format(subtotal) }}</span>
+                            <span id="subtotal">₹0.00</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between text-sm">
                             <span>Delivery Fee</span>
-                            <span>₹{{ "%.2f"|format(delivery_fee) }}</span>
+                            <span id="deliveryFee">₹40.00</span>
                         </div>
-                        <div class="flex justify-between font-bold text-lg">
+                        <div class="flex justify-between font-bold text-lg border-t pt-2">
                             <span>Total</span>
-                            <span>₹{{ "%.2f"|format(total) }}</span>
+                            <span id="total">₹0.00</span>
                         </div>
                     </div>
-
-                    <button onclick="placeOrder()" 
-                            class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors">
-                        Place Order
-                    </button>
                 </div>
+
+                <button onclick="checkout.placeOrder()" 
+                        class="w-full bg-[#FF9800] text-white py-4 rounded-lg font-semibold hover:bg-[#F57C00] transition-colors">
+                    Place Order
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        async function placeOrder() {
-            const form = document.getElementById('checkoutForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
+        class CheckoutManager {
+            constructor() {
+                this.loadCartItems();
+                this.setupEventListeners();
             }
 
-            const formData = new FormData(form);
-            const deliveryDetails = {
-                name: formData.get('name'),
-                phone: formData.get('phone'),
-                address: formData.get('address')
-            };
+            async loadCartItems() {
+                try {
+                    const response = await fetch('/cart/items', { credentials: 'include' });
+                    console.log("Cart items response status:", response.status); // Debug log
+                    if (!response.ok) throw new Error('Failed to fetch cart items');
 
-            try {
-                const response = await fetch('/place_order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        delivery_details: deliveryDetails,
-                        total_amount: {{ total }},
-                        delivery_fee: {{ delivery_fee }},
-                        payment_method: 'cash_on_delivery'
-                    })
-                });
+                    const items = await response.json();
+                    console.log("Fetched cart items:", items); // Debug log
 
-                const result = await response.json();
-                if (result.success) {
-                    window.location.href = `/orders?order_id=${result.orderId}`;
-                } else {
-                    throw new Error(result.message || 'Failed to place order');
+                    if (!items || items.length === 0) {
+                        alert('No items found in your cart. Redirecting to the cart page.');
+                        window.location.href = '/cart';
+                        return;
+                    }
+
+                    this.displayItems(items);
+                } catch (error) {
+                    console.error('Error loading cart items:', error);
+                    alert('Failed to load cart items. Redirecting to the cart page.');
+                    window.location.href = '/cart';
                 }
-            } catch (error) {
-                console.error('Error placing order:', error);
-                alert('Failed to place order. Please try again.');
+            }
+
+            displayItems(items) {
+                const container = document.getElementById('orderItems');
+                if (!container) return;
+
+                const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const deliveryFee = 40;  // Fixed delivery fee
+
+                container.innerHTML = items.map(item => `
+                    <div class="flex justify-between items-center py-4 border-b">
+                        <div class="flex-1">
+                            <h3 class="font-medium">${item.name}</h3>
+                            <p class="text-sm text-gray-500">${item.quantity} × ₹${item.price}</p>
+                        </div>
+                        <p class="font-semibold">₹${(item.price * item.quantity).toFixed(2)}</p>
+                    </div>
+                `).join('');
+
+                // Update summary
+                document.getElementById('subtotal').textContent = `₹${total.toFixed(2)}`;
+                document.getElementById('total').textContent = `₹${(total + deliveryFee).toFixed(2)}`;
+            }
+
+            setupEventListeners() {
+                const form = document.getElementById('addressForm');
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.placeOrder();
+                    });
+                }
+            }
+
+            async placeOrder() {
+                try {
+                    const addressForm = document.getElementById('addressForm');
+                    if (!addressForm.checkValidity()) {
+                        addressForm.reportValidity();
+                        return;
+                    }
+
+                    // Calculate total from items
+                    const items = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
+                    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                    const deliveryFee = 40;
+                    const totalAmount = subtotal + deliveryFee;
+
+                    const orderData = {
+                        delivery_details: {
+                            name: document.getElementById('fullName').value,
+                            phone: document.getElementById('phone').value,
+                            address: document.getElementById('address').value,
+                            city: document.getElementById('city').value,
+                            state: document.getElementById('state').value,
+                            pincode: document.getElementById('pincode').value
+                        },
+                        items: items,
+                        payment_method: document.querySelector('input[name="payment"]:checked').value,
+                        total_amount: totalAmount,
+                        delivery_fee: deliveryFee
+                    };
+
+                    // Show loading state
+                    const button = document.querySelector('button[onclick="checkout.placeOrder()"]');
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+                    const response = await fetch('/place_order', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(orderData),
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Clear cart data
+                        localStorage.removeItem('cart');
+                        localStorage.removeItem('checkoutCart');
+                        
+                        // Show success message
+                        alert(`Order placed successfully!\nOrder ID: ${result.orderId}`);
+                        window.location.href = '/customer/dashboard';
+                    } else {
+                        throw new Error(result.error || 'Failed to place order');
+                    }
+                } catch (error) {
+                    console.error('Error placing order:', error);
+                    alert('Error placing order: ' + error.message);
+                } finally {
+                    // Reset button state
+                    const button = document.querySelector('button[onclick="checkout.placeOrder()"]');
+                    button.disabled = false;
+                    button.innerHTML = 'Place Order';
+                }
             }
         }
+
+        // Initialize checkout
+        const checkout = new CheckoutManager();
+
+        // Add touch device optimizations
+        if ('ontouchstart' in window) {
+            document.querySelectorAll('button').forEach(button => {
+                button.addEventListener('touchstart', function() {
+                    this.style.opacity = '0.7';
+                });
+                button.addEventListener('touchend', function() {
+                    this.style.opacity = '1';
+                });
+            });
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        fetch('footer.html')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('beforeend', html);
+            });
+
+        // Pre-fill form with user data if available
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = {
+                name: "{{ user.name }}",
+                phone: "{{ user.phone }}"
+            };
+            
+            if (user.name) document.getElementById('fullName').value = user.name;
+            if (user.phone) document.getElementById('phone').value = user.phone;
+        });
     </script>
 </body>
 </html>
