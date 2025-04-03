@@ -495,6 +495,74 @@
             loadSalesSummary();
             setInterval(loadSalesSummary, 30000);
         });
+
+        class DashboardManager {
+            constructor() {
+                this.loadSalesSummary();
+                this.refreshInterval = setInterval(() => this.loadSalesSummary(), 30000); // Refresh every 30 seconds
+            }
+        
+            async loadSalesSummary() {
+                try {
+                    const response = await fetch(`/get_farmer_sales_summary/${farmerId}`, {
+                        credentials: 'include'
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to fetch sales data');
+                    const data = await response.json();
+        
+                    // Update summary cards with real-time data
+                    document.getElementById('totalEarnings').textContent = `₹${data.total_earnings.toFixed(2)}`;
+                    document.getElementById('activeOrders').textContent = data.active_orders;
+                    document.getElementById('deliveredOrders').textContent = data.delivered_orders;
+                    document.getElementById('productsCount').textContent = data.products_count;
+                    
+                    // Update active orders list if it exists
+                    const ordersList = document.getElementById('activeOrdersList');
+                    if (ordersList && data.active_orders_details) {
+                        ordersList.innerHTML = data.active_orders_details.map(order => `
+                            <div class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-semibold">Order #${order.id}</h3>
+                                    <span class="px-2 py-1 rounded-full text-sm ${this.getStatusColor(order.status)}">
+                                        ${order.status}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <p>Items: ${order.items.length}</p>
+                                    <p>Total: ₹${order.total_amount.toFixed(2)}</p>
+                                </div>
+                            </div>
+                        `).join('') || '<p class="text-gray-500 text-center">No active orders</p>';
+                    }
+                } catch (error) {
+                    console.error('Error loading sales summary:', error);
+                    // Show error state in summary cards
+                    document.querySelectorAll('.summary-card').forEach(card => {
+                        card.innerHTML = '<p class="text-red-500">Failed to load data</p>';
+                    });
+                }
+            }
+        
+            getStatusColor(status) {
+                const colors = {
+                    'Pending': 'bg-yellow-100 text-yellow-800',
+                    'Confirmed': 'bg-blue-100 text-blue-800',
+                    'Delivered': 'bg-green-100 text-green-800',
+                    'Cancelled': 'bg-red-100 text-red-800'
+                };
+                return colors[status] || 'bg-gray-100 text-gray-800';
+            }
+        }
+        
+        // Initialize dashboard with farmerId from session
+        const farmerId = '{{ session.user_id }}';
+        const dashboard = new DashboardManager();
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            clearInterval(dashboard.refreshInterval);
+        });
     </script>
 </body>
 </html>

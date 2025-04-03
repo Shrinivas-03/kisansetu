@@ -1173,7 +1173,7 @@ def remove_from_wishlist(product_id):
 @app.route('/profile')
 def profile():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect('/login')
     return render_template('profile.html')
 
 @app.route('/update_profile', methods=['POST'])
@@ -1324,73 +1324,61 @@ def delete_farmer_product(product_id):
 @app.route('/get_farmer_sales_summary/<int:farmer_id>')
 def get_farmer_sales_summary(farmer_id):
     try:
-        print(f"Debug: Processing sales summary for farmer {farmer_id}")
-        
-        # Get product count
-        product_count = Product.query.filter_by(farmer_id=farmer_id).count()
-        
-        # Get all orders and parse their items
-        orders = Order.query.all()
-        farmer_orders = []
+        # Verify farmer access
+        if 'user_id' not in session or int(session['user_id']) != farmer_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        # Get all products count
+        products_count = Product.query.filter_by(farmer_id=farmer_id).count()
+
+        # Get all orders containing farmer's products
         total_earnings = 0
-
+        active_orders = []
+        delivered_count = 0
+        
+        # Query all orders
+        orders = Order.query.all()
         for order in orders:
-            items = order.items or []  # Ensure items is a list
+            farmer_total = 0
             farmer_items = []
-            order_total = 0
-
-            # Process each item in the order
-            for item in items:
-                # Check if this item belongs to the farmer
-                product = db.session.get(Product, item.get('product_id'))
+            
+            # Check each item in the order
+            for item in order.items:
+                product = Product.query.get(item.get('product_id'))
                 if product and product.farmer_id == farmer_id:
+                    item_total = float(item.get('price', 0)) * int(item.get('quantity', 0))
+                    farmer_total += item_total
                     farmer_items.append(item)
-                    # Calculate item total
-                    quantity = int(item.get('quantity', 0))
-                    price = float(item.get('price', 0))
-                    order_total += quantity * price
-
-            # If order contains farmer's items, add to relevant lists
+            
             if farmer_items:
-                order_data = {
-                    'id': order.id,
-                    'total_amount': order_total,
-                    'status': order.status,
-                    'items': farmer_items
-                }
-                farmer_orders.append(order_data)
-                
-                # Add to total earnings if order is delivered
+                # Track earnings from delivered orders
                 if order.status == 'Delivered':
-                    total_earnings += order_total
-
-        # Categorize orders
-        pending_orders = [o for o in farmer_orders if o['status'] == 'Pending']
-        active_orders = [o for o in farmer_orders if o['status'] in ['Pending', 'Confirmed']]
-        delivered_orders = [o for o in farmer_orders if o['status'] == 'Delivered']
-
-        print(f"Debug: Found {len(active_orders)} active, {len(delivered_orders)} delivered orders")
-        print(f"Debug: Total earnings: ₹{total_earnings}")
+                    total_earnings += farmer_total
+                    delivered_count += 1
+                
+                # Track active orders
+                if order.status in ['Pending', 'Confirmed']:
+                    active_orders.append({
+                        'id': order.id,
+                        'status': order.status,
+                        'items': farmer_items,
+                        'total_amount': farmer_total
+                    })
 
         return jsonify({
+            'success': True,
             'total_earnings': total_earnings,
             'active_orders': len(active_orders),
-            'delivered_orders': len(delivered_orders),
-            'pending_orders': len(pending_orders),
-            'products_count': product_count,
+            'delivered_orders': delivered_count,
+            'products_count': products_count,
             'active_orders_details': active_orders
         })
 
     except Exception as e:
-        print(f"Error in get_farmer_sales_summary: {e}")
+        print(f"Error getting sales summary: {e}")
         return jsonify({
             'error': str(e),
-            'total_earnings': 0,
-            'active_orders': 0,
-            'delivered_orders': 0,
-            'pending_orders': 0,
-            'products_count': product_count,
-            'active_orders_details': []
+            'success': False
         }), 500
 
 @app.route('/reapply_product/<int:product_id>', methods=['POST'])

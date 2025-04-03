@@ -6,8 +6,38 @@
     <title>Kisansetu - Customer Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to bottom right, #fff5f7, #ffe4e6);
+        }
+
+        /* Add these additional gradient classes */
+        .bg-gradient-pink {
+            background: linear-gradient(to bottom right, var(--background-gradient-start), var(--background-gradient-end));
+        }
+
+        :root {
+            --background-gradient-start: #fff5f7;
+            --background-gradient-end: #ffe4e6;
+        }
+
+        /* Update card background for better contrast */
+        .product-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
-<body class="bg-[#FAF3E0] m-0 font-sans">
+<body class="bg-gradient-to-br from-pink-50 to-pink-100 min-h-screen">
     <!-- Custom Navbar -->
     <nav class="bg-[#4CAF50] p-4 fixed top-0 left-0 right-0 z-50 shadow-md">
         <div class="flex justify-between items-center max-w-7xl mx-auto">
