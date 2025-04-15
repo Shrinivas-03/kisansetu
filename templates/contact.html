@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - KisanSetu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to bottom right, #fff5f7, #ffe4e6);
+        }
+        .contact-form input,
+        .contact-form textarea {
+            @apply w-full p-3 border-2 border-gray-200 rounded-lg;
+            transition: all 0.3s ease;
+        }
+        .contact-form input:focus,
+        .contact-form textarea:focus {
+            @apply border-green-500 ring-2 ring-green-500/20;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Load Navbar -->
+    <script>
+        fetch('/navbar')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('afterbegin', html);
+                document.body.style.paddingTop = '60px';
+            });
+    </script>
+
+    <div class="container mx-auto px-4 py-12 max-w-6xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Contact Form -->
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <h1 class="text-3xl font-bold mb-6 text-green-600">Contact Us</h1>
+                <form class="contact-form space-y-6" onsubmit="submitForm(event)">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Name</label>
+                        <input type="text" required placeholder="Your name">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Email</label>
+                        <input type="email" required placeholder="Your email">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Subject</label>
+                        <input type="text" required placeholder="Message subject">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Message</label>
+                        <textarea rows="5" required placeholder="Your message"></textarea>
+                    </div>
+                    <button type="submit" 
+                            class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors">
+                        Send Message
+                    </button>
+                </form>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="space-y-8">
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold mb-6 text-green-600">Get in Touch</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-4">
+                            <i class="fas fa-map-marker-alt text-green-500 text-xl mt-1"></i>
+                            <div>
+                                <h3 class="font-semibold">Address</h3>
+                                <p class="text-gray-600">123 Farmer's Market Street,<br>Agritown, AG 12345</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <i class="fas fa-phone text-green-500 text-xl mt-1"></i>
+                            <div>
+                                <h3 class="font-semibold">Phone</h3>
+                                <p class="text-gray-600">+91 1234567890</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <i class="fas fa-envelope text-green-500 text-xl mt-1"></i>
+                            <div>
+                                <h3 class="font-semibold">Email</h3>
+                                <p class="text-gray-600">contact@kisansetu.com</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Business Hours -->
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold mb-6 text-green-600">Business Hours</h2>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Monday - Friday</span>
+                            <span class="font-semibold">9:00 AM - 6:00 PM</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Saturday</span>
+                            <span class="font-semibold">10:00 AM - 4:00 PM</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Sunday</span>
+                            <span class="font-semibold">Closed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Footer -->
+    <script>
+        fetch('/footer')
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('beforeend', html);
+            });
+
+        function submitForm(event) {
+            event.preventDefault();
+            // Add form submission logic here
+            alert('Thank you for your message. We will get back to you soon!');
+            event.target.reset();
+        }
+    </script>
+</body>
+</html>

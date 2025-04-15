@@ -350,6 +350,14 @@ def navbar():
 def footer():
     return render_template('footer.html')
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
 @app.route('/add_product', methods=['POST'])
 def add_product():
     if 'user_id' not in session or session.get('user_type') != 'farmer':
@@ -1118,6 +1126,11 @@ def add_to_wishlist(product_id):
         return jsonify({'error': 'Not logged in'}), 401
         
     try:
+        # Verify product exists first
+        product = Product.query.get(product_id)
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+            
         # Check if already in wishlist
         existing = Wishlist.query.filter_by(
             user_id=session['user_id'], 
@@ -1127,10 +1140,12 @@ def add_to_wishlist(product_id):
         if existing:
             return jsonify({'success': True, 'message': 'Already in wishlist'})
             
+        # Create new wishlist item with explicit product_id
         wishlist_item = Wishlist(
             user_id=session['user_id'],
-            product_id=product_id
+            product_id=product_id  # Ensure product_id is not None
         )
+        
         db.session.add(wishlist_item)
         db.session.commit()
         
@@ -1144,6 +1159,7 @@ def add_to_wishlist(product_id):
         })
     except Exception as e:
         db.session.rollback()
+        print(f"Error adding to wishlist: {e}")  # Add logging
         return jsonify({'error': str(e)}), 500
 
 @app.route('/remove_from_wishlist/<int:product_id>', methods=['POST'])
@@ -1152,10 +1168,17 @@ def remove_from_wishlist(product_id):
         return jsonify({'error': 'Not logged in'}), 401
         
     try:
-        Wishlist.query.filter_by(
+        # Find the specific wishlist item to remove
+        wishlist_item = Wishlist.query.filter_by(
             user_id=session['user_id'],
             product_id=product_id
-        ).delete()
+        ).first()
+        
+        if not wishlist_item:
+            return jsonify({'error': 'Item not found in wishlist'}), 404
+            
+        # Delete the specific item
+        db.session.delete(wishlist_item)
         db.session.commit()
         
         # Get updated count
@@ -1168,6 +1191,7 @@ def remove_from_wishlist(product_id):
         })
     except Exception as e:
         db.session.rollback()
+        print(f"Error removing from wishlist: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/profile')
