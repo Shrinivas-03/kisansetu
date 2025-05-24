@@ -691,11 +691,11 @@
 
                         <!-- Action Buttons -->
                         <div class="flex gap-4 mt-6">
-                            <button onclick="adminDashboard.approveFarmer(${kyc.id})"
+                            <button onclick="adminDashboard.approveFarmerKYC(${kyc.id})"
                                     class="flex-1 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600">
                                 <i class="fas fa-check mr-2"></i>Approve Farmer
                             </button>
-                            <button onclick="adminDashboard.rejectFarmer(${kyc.id})"
+                            <button onclick="adminDashboard.rejectKYC(${kyc.id})"
                                     class="flex-1 bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600">
                                 <i class="fas fa-times mr-2"></i>Reject
                             </button>
@@ -704,7 +704,7 @@
                 `).join('');
             }
 
-            async approveFarmer(kycId) {
+            async approveFarmerKYC(kycId) {
                 try {
                     const response = await fetch(`/admin/approve-farmer/${kycId}`, {
                         method: 'POST'
@@ -742,7 +742,7 @@
                     }
                 } catch (error) {
                     console.error('Error rejecting KYC:', error);
-                    this.showError('Failed to reject KYC');
+                    this.showNotification('Failed to reject KYC');
                 }
             }
 

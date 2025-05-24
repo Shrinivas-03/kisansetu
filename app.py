@@ -1,21 +1,22 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import pymysql, random
+from supabase import create_client
 from flask_mail import Mail, Message
-import os
+import os, random, time
 from werkzeug.utils import secure_filename
 from functools import wraps
-from sqlalchemy import text
-import time  # Add this import at the top with other imports
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://shri:1234@localhost/kisan'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Flask-Mail Configuration
+# Supabase Configuration
+supabase = create_client(
+    "https://cuzdmgynxhmtkxujyjey.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1emRtZ3lueGhtdGt4dWp5amV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4MjM2NTMsImV4cCI6MjA1ODM5OTY1M30.vjRAA-FKgfjFU9v4LoxfM1_BuzFZg1GkUEJKSxstHyU"
+)
+
+# Mail and file upload configs remain the same
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Use Gmail's SMTP server
 app.config['MAIL_PORT'] = 587  # Use port 587 for TLS
 app.config['MAIL_USE_TLS'] = True
@@ -29,154 +30,163 @@ app.config['UPLOAD_FOLDER'] = 'e:/kisansetu/static/product_images'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Admin key configuration
+app.config['ADMIN_REGISTRATION_KEY'] = os.environ.get('ADMIN_KEY', '1234')  # Use env var or default key
+ADMIN_KEY_EMAIL = 'nadager990@gmail.com'  # Admin contact email
+
 mail = Mail(app)
-db = SQLAlchemy(app)
 
 def init_db():
-    with app.app_context():
-        try:
-            # Check if tables exist
-            existing_tables = db.engine.table_names()
-            
-            if not existing_tables:
-                # Create all tables if they don't exist
-                db.create_all()
-                print("Created all database tables")
-            else:
-                # Add missing columns to existing tables
-                with db.engine.connect() as conn:
-                    try:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT FALSE"))
-                        conn.execute(text("ALTER TABLE user ADD COLUMN IF NOT EXISTS profile_pic VARCHAR(255)"))
-                        conn.commit()
-                        print("Added is_approved and profile_pic columns to user table")
-                    except Exception as e:
-                        print(f"Note: is_approved or profile_pic column might already exist: {e}")
-                        db.session.rollback()
-        except Exception as e:
-            print(f"Database initialization error: {e}")
-            db.session.rollback()
+    try:
+        # Tables are already created in Supabase
+        print("Connected to Supabase successfully")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
 
-def add_profile_pic_column():
-    with app.app_context():
-        try:
-            with db.engine.connect() as conn:
-                conn.execute(text("ALTER TABLE user ADD COLUMN IF NOT EXISTS profile_pic VARCHAR(255)"))
-                conn.commit()
-                print("Profile picture column added successfully")
-        except Exception as e:
-            print(f"Error adding profile_pic column: {e}")
-            db.session.rollback()
+def get_user_by_email(email):
+    try:
+        response = supabase.table('users').select('*').eq('email', email).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error fetching user: {e}")
+        return None
 
-# Database Model
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    phone = db.Column(db.String(15), nullable=False)
-    user_type = db.Column(db.String(10), nullable=False)  # 'customer' or 'farmer'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    otp = db.Column(db.String(6))
-    is_verified = db.Column(db.Boolean, default=False)
-    is_approved = db.Column(db.Boolean, default=False)  # Add this line for farmer approval
-    profile_pic = db.Column(db.String(255), nullable=True)  # Match the new column
+def create_user(user_data):
+    try:
+        response = supabase.table('users').insert(user_data).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error creating user: {e}")
+        return None
 
-# Product Model
-class Product(db.Model):
-    __tablename__ = 'products'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(100), nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    price = db.Column(db.Numeric(10,2), nullable=False)  # Changed to decimal
-    stock = db.Column(db.Integer, nullable=False)
-    description = db.Column(db.Text)
-    image_url = db.Column(db.Text)
-    farmer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    is_approved = db.Column(db.Boolean, default=False)
-    is_rejected = db.Column(db.Boolean, default=False)  # Add this line
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+def get_admin_by_email(email):
+    try:
+        response = supabase.table('admins').select('*').eq('email', email).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error fetching admin: {e}")
+        return None
 
-# Admin Model
-class Admin(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    otp = db.Column(db.String(6))
-    is_verified = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+def create_admin(admin_data):
+    try:
+        # Validate admin data
+        required_fields = ['name', 'email', 'password']
+        if not all(admin_data.get(field) for field in required_fields):
+            print("Missing required fields in admin data")
+            return None
 
-# Add this with your other models
-class Order(db.Model):
-    __tablename__ = 'orders'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    order_date = db.Column(db.DateTime, default=datetime.utcnow)
-    total_amount = db.Column(db.Numeric(10, 2), nullable=False)
-    delivery_fee = db.Column(db.Numeric(10, 2), nullable=False)
-    status = db.Column(db.String(50), default='Pending')  # Pending, Confirmed, Delivered, Cancelled
-    payment_method = db.Column(db.String(50), nullable=False)
-    payment_status = db.Column(db.String(50), default='Pending')  # Pending, Paid, Failed
-    delivery_details = db.Column(db.JSON, nullable=False)
-    items = db.Column(db.JSON, nullable=False)
-    tracking_number = db.Column(db.String(100))
-    delivery_date = db.Column(db.DateTime)
-    cancelled_date = db.Column(db.DateTime)
-    cancel_reason = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        # Insert admin record
+        response = supabase.table('admins').insert({
+            'name': admin_data['name'],
+            'email': admin_data['email'].lower(),  # Normalize email
+            'password': admin_data['password'],
+            'phone': admin_data.get('phone', ''),
+            'is_verified': admin_data.get('is_verified', False),
+            'otp': admin_data.get('otp'),
+            'created_at': datetime.utcnow().isoformat()
+        }).execute()
 
-    # Relationship with User model
-    user = db.relationship('User', backref=db.backref('orders', lazy=True))
+        if not response.data:
+            print("No data returned from admin creation")
+            return None
 
-# Add this after other models
-class Wishlist(db.Model):
-    __tablename__ = 'wishlists'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+        print(f"Admin created successfully: {response.data[0]}")
+        return response.data[0]
 
-    # Relationships
-    user = db.relationship('User', backref=db.backref('wishlists', lazy=True))  # Fixed missing parenthesis
-    product = db.relationship('Product', backref=db.backref('wishlists', lazy=True))  # Fixed missing parenthesis
-
-# Cart Model
-class Cart(db.Model):
-    __tablename__ = 'cart'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
-    quantity = db.Column(db.Integer, nullable=False, default=1)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-# Add KYC Model after other models
-class KYC(db.Model):
-    __tablename__ = 'kyc'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    fruit_id = db.Column(db.String(50), nullable=False)
-    city = db.Column(db.String(100), nullable=False)
-    state = db.Column(db.String(100), nullable=False)
-    country = db.Column(db.String(100), nullable=False)
-    document_type = db.Column(db.String(20), nullable=False)  # 'aadhar' or 'pan'
-    document_number = db.Column(db.String(20), nullable=False)
-    document_image = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    except Exception as e:
+        print(f"Error creating admin: {str(e)}")
+        return None
 
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Check if admin is logged in via session
         if 'admin_id' not in session:
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated_function
+
+class User:
+    def __init__(self, data):
+        self.id = data.get('id')
+        self.name = data.get('name')
+        self.email = data.get('email')
+        self.phone = data.get('phone')
+        self.user_type = data.get('user_type')
+        self.is_verified = data.get('is_verified', False)
+        self.is_approved = data.get('is_approved', False)
+        self.created_at = data.get('created_at')
+        self.otp = data.get('otp')
+
+    @staticmethod
+    def query():
+        return UserQuery()
+
+class UserQuery:
+    @staticmethod
+    def get(user_id):
+        try:
+            response = supabase.table('users').select('*').eq('id', user_id).execute()
+            return User(response.data[0]) if response.data else None
+        except Exception as e:
+            print(f"Error in get: {e}")
+            return None
+    
+    @staticmethod
+    def filter_by(**kwargs):
+        try:
+            response = supabase.table('users').select('*')
+            for key, value in kwargs.items():
+                response = response.eq(key, value)
+            result = response.execute()
+            return [User(user) for user in result.data]
+        except Exception as e:
+            print(f"Error in filter_by: {e}")
+            return []
+
+class Product:
+    def __init__(self, data):
+        self.id = data.get('id')
+        self.name = data.get('name')
+        self.category = data.get('category')
+        self.price = data.get('price')
+        self.stock = data.get('stock', 0)
+        self.description = data.get('description')
+        self.image_url = data.get('image_url')
+        self.farmer_id = data.get('farmer_id')
+        self.is_approved = data.get('is_approved', False)
+        self.is_rejected = data.get('is_rejected', False)
+        self.created_at = data.get('created_at')
+
+    @staticmethod
+    def query():
+        return ProductQuery()
+
+class ProductQuery:
+    @staticmethod
+    def get(product_id):
+        try:
+            response = supabase.table('products').select('*').eq('id', product_id).execute()
+            return Product(response.data[0]) if response.data else None
+        except Exception as e:
+            print(f"Error in get: {e}")
+            return None
+
+    @staticmethod
+    def filter_by(**kwargs):
+        try:
+            response = supabase.table('products').select('*')
+            for key, value in kwargs.items():
+                response = response.eq(key, value)
+            result = response.execute()
+            return [Product(product) for product in result.data]
+        except Exception as e:
+            print(f"Error in filter_by: {e}")
+            return []
 
 @app.route('/')
 def home():
@@ -184,7 +194,6 @@ def home():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    # Ensure this route matches the URL in the signup form
     if request.method == 'POST':
         name = request.form['name']
         email = request.form['email']
@@ -192,69 +201,69 @@ def signup():
         phone = request.form['phone']
         user_type = request.form['user_type']  # 'customer' or 'farmer'
 
-        # Check if the email is already registered
-        if User.query.filter_by(email=email).first():
+        # Check if email exists
+        if check_existing_user(email):
             flash('Email already registered.')
             return redirect(url_for('signup'))
 
         # Generate OTP
         otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-
-        # Create a new user
-        hashed_password = generate_password_hash(password)
-        new_user = User(
-            name=name,
-            email=email,
-            password=hashed_password,
-            phone=phone,
-            user_type=user_type,
-            otp=otp,
-            is_verified=False
-        )
-        db.session.add(new_user)
-        db.session.commit()
-
-        # Set is_approved based on user type
-        if user_type == 'farmer':
-            new_user.is_approved = False
-            db.session.commit()
-            
-            # Send email to admin about new farmer registration
-            try:
-                admin_msg = Message('New Farmer Registration - Action Required',
-                                 recipients=['admin@kisansetu.com'])  # Change to admin email
-                admin_msg.body = f'''New farmer registration:
-                Name: {name}
-                Email: {email}
-                Phone: {phone}
-                
-                Please review and approve/reject from admin dashboard.
-                '''
-                mail.send(admin_msg)
-            except Exception as e:
-                print(f"Error sending admin notification: {e}")
-        else:
-            new_user.is_approved = True  # Customers don't need approval
         
-        db.session.commit()
+        # Create user data
+        user_data = {
+            'name': name,
+            'email': email,
+            'password': generate_password_hash(password),
+            'phone': phone,
+            'user_type': user_type,
+            'otp': otp,
+            'is_verified': False,
+            'is_approved': user_type != 'farmer'  # Only farmers need approval
+        }
 
-        # Send OTP email
+        # Create new user in Supabase
         try:
-            msg = Message('Your OTP for Kisansetu Registration',
-                          sender='your-email@example.com',
-                          recipients=[email])
-            msg.body = f'Your OTP is: {otp}'
-            mail.send(msg)
-            flash('OTP sent to your email. Please verify your account.')
-        except Exception as e:
-            print(f"Error sending email: {e}")
-            flash('Failed to send OTP. Please try again.')
-            return redirect(url_for('signup'))
+            response = supabase.table('users').insert(user_data).execute()
+            new_user = response.data[0]
+            
+            if user_type == 'farmer':
+                # Send admin notification
+                try:
+                    admin_msg = Message('New Farmer Registration - Action Required',
+                                    recipients=['admin@kisansetu.com'])
+                    admin_msg.body = f'''New farmer registration:
+                    Name: {name}
+                    Email: {email}
+                    Phone: {phone}
+                    
+                    Please review and approve/reject from admin dashboard.
+                    '''
+                    mail.send(admin_msg)
+                except Exception as e:
+                    print(f"Error sending admin notification: {e}")
 
-        # Set session and redirect to OTP verification
-        session['temp_user_id'] = new_user.id
-        session['user_type'] = user_type
-        return redirect(url_for('otp_verification'))
+            # Send OTP email
+            try:
+                msg = Message('Your OTP for Kisansetu Registration',
+                            sender=app.config['MAIL_DEFAULT_SENDER'],
+                            recipients=[email])
+                msg.body = f'Your OTP is: {otp}'
+                mail.send(msg)
+                flash('OTP sent to your email. Please verify your account.')
+            except Exception as e:
+                print(f"Error sending email: {e}")
+                flash('Failed to send OTP. Please try again.')
+                return redirect(url_for('signup'))
+
+            # Set session
+            session['temp_user_id'] = new_user['id']
+            session['user_type'] = user_type
+            return redirect(url_for('otp_verification'))
+
+        except Exception as e:
+            print(f"Error creating user: {e}")
+            flash('Error creating account. Please try again.')
+            return redirect(url_for('signup'))
 
     return render_template('signup.html')
 
@@ -264,14 +273,19 @@ def otp_verification():
         otp = request.form['otp']
         user_id = session.get('temp_user_id')
 
-        user = User.query.get(user_id)
-        if user and user.otp == otp:
-            user.is_verified = True
-            user.otp = None  # Clear OTP after verification
-            db.session.commit()
-            session['user_id'] = user.id
+        # Use Supabase to get user
+        response = supabase.table('users').select('*').eq('id', user_id).execute()
+        user = User(response.data[0]) if response.data else None
 
-            # Different messages for farmer and customer
+        if user and user.otp == otp:
+            # Update user verification status
+            supabase.table('users').update({
+                'is_verified': True,
+                'otp': None
+            }).eq('id', user.id).execute()
+            
+            session['user_id'] = user.id
+            
             if user.user_type == 'farmer':
                 flash('Account verified! Your KYC approval application has been submitted.')
                 return redirect(url_for('kyc_verification'))
@@ -290,30 +304,28 @@ def login():
         email = request.form['email']
         password = request.form['password']
 
-        user = User.query.filter_by(email=email).first()
-        if user and check_password_hash(user.password, password):
-            if not user.is_verified:
+        # Get user from Supabase
+        response = supabase.table('users').select('*').eq('email', email).execute()
+        user = response.data[0] if response.data else None
+
+        if user and check_password_hash(user['password'], password):
+            if not user['is_verified']:
                 flash('Please verify your email first.')
                 return redirect(url_for('login'))
-                
-            # Check for farmer approval
-            if user.user_type == 'farmer':
-                if not user.is_approved:
-                    flash('Your farmer account is pending admin approval.')
-                    return redirect(url_for('login'))
+
+            if user['user_type'] == 'farmer' and not user['is_approved']:
+                flash('Your farmer account is pending admin approval.')
+                return redirect(url_for('login'))
 
             # Store user info in session
-            session['user_id'] = user.id
-            session['user_type'] = user.user_type
-            session['user_name'] = user.name
-            session['user_email'] = user.email
-            session['user_phone'] = user.phone
-            session['user_profile_pic'] = user.profile_pic or f"https://ui-avatars.com/api/?name={user.name}&background=random"
-            # Redirect based on user type
-            if user.user_type == 'farmer':
-                return redirect(url_for('farmer_dashboard'))
-            else:
-                return redirect(url_for('customer_dashboard'))
+            session['user_id'] = user['id']
+            session['user_type'] = user['user_type']
+            session['user_name'] = user['name']
+            session['user_email'] = user['email']
+            session['user_phone'] = user['phone']
+            session['user_profile_pic'] = user.get('profile_pic') or f"https://ui-avatars.com/api/?name={user['name']}&background=random"
+
+            return redirect(url_for('farmer_dashboard' if user['user_type'] == 'farmer' else 'customer_dashboard'))
 
         flash('Invalid email or password.')
         return redirect(url_for('login'))
@@ -409,27 +421,31 @@ def add_product_form():
                     file.save(filepath)
                     image_url = f'/static/product_images/{filename}'
 
-            # Create new product with decimal price
-            new_product = Product(
-                name=request.form['name'],
-                category=request.form['category'],
-                price=float(request.form['price']),  # Will be converted to Decimal
-                stock=int(request.form['stock']),
-                description=request.form.get('description', ''),
-                image_url=image_url,
-                farmer_id=session['user_id'],
-                is_approved=False
-            )
+            # Prepare product data for Supabase
+            product_data = {
+                'name': request.form['name'],
+                'category': request.form['category'],
+                'price': float(request.form['price']),
+                'stock': int(request.form['stock']),
+                'description': request.form.get('description', ''),
+                'image_url': image_url,
+                'farmer_id': session['user_id'],
+                'is_approved': False,
+                'is_rejected': False,
+                'created_at': datetime.utcnow().isoformat()
+            }
             
-            db.session.add(new_product)
-            db.session.commit()
+            # Insert product into Supabase
+            response = supabase.table('products').insert(product_data).execute()
+            if not response.data:
+                flash('Error adding product. Please try again.')
+                return redirect(url_for('add_product_form'))
             
             flash('Product added successfully! Waiting for admin approval.')
             return redirect(url_for('farmer_dashboard'))
             
         except Exception as e:
             print(f"Error adding product: {str(e)}")  # Debug log
-            db.session.rollback()
             flash(f'Error adding product: {str(e)}')
             return redirect(url_for('add_product_form'))
     
@@ -441,30 +457,30 @@ def admin_login():
         email = request.form['email']
         password = request.form['password']
         
-        admin = Admin.query.filter_by(email=email).first()
-        if admin and check_password_hash(admin.password, password):
-            if not admin.is_verified:
+        admin = get_admin_by_email(email)
+        if admin and check_password_hash(admin['password'], password):
+            if not admin['is_verified']:
                 # Generate and send OTP
                 otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-                admin.otp = otp
-                db.session.commit()
+                
+                # Update admin OTP in Supabase
+                supabase.table('admins').update({'otp': otp}).eq('id', admin['id']).execute()
                 
                 # Send OTP email
                 try:
-                    msg = Message('Admin Login OTP - KisanSetu',
-                              recipients=[email])
+                    msg = Message('Admin Login OTP - KisanSetu', recipients=[email])
                     msg.body = f'Your OTP for admin login is: {otp}'
                     mail.send(msg)
-                    session['temp_admin_id'] = admin.id
+                    session['temp_admin_id'] = admin['id']
                     return redirect(url_for('admin_otp_verification'))
                 except Exception as e:
                     flash('Error sending OTP.')
                     return redirect(url_for('admin_login'))
             
-            session['admin_id'] = admin.id
-            session['admin_name'] = admin.name
+            session['admin_id'] = admin['id']
+            session['admin_name'] = admin['name']
             return redirect(url_for('admin_dashboard'))
-            
+        
         flash('Invalid email or password')
         return redirect(url_for('admin_login'))
     
@@ -476,14 +492,18 @@ def admin_otp_verification():
         return redirect(url_for('admin_login'))
         
     if request.method == 'POST':
-        admin = Admin.query.get(session['temp_admin_id'])
-        if admin and admin.otp == request.form['otp']:
-            admin.is_verified = True
-            admin.otp = None
-            db.session.commit()
+        response = supabase.table('admins').select('*').eq('id', session['temp_admin_id']).execute()
+        admin = response.data[0] if response.data else None
+        
+        if admin and admin['otp'] == request.form['otp']:
+            # Update admin verification status
+            supabase.table('admins').update({
+                'is_verified': True,
+                'otp': None
+            }).eq('id', admin['id']).execute()
             
-            session['admin_id'] = admin.id
-            session['admin_name'] = admin.name
+            session['admin_id'] = admin['id']
+            session['admin_name'] = admin['name']
             return redirect(url_for('admin_dashboard'))
             
         flash('Invalid OTP')
@@ -497,76 +517,24 @@ def admin_redirect():
         return redirect(url_for('admin_dashboard'))
     return redirect(url_for('admin_login'))
 
+@app.route('/admin/signup')
+def admin_signup():
+    return redirect(url_for('admin_login'))
+
 @app.route('/admin/dashboard')
 @admin_required
 def admin_dashboard():
     return render_template('admin_dashboard.html')
-
-@app.route('/admin-signup', methods=['GET', 'POST'])
-def admin_signup():
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
-        admin_key = request.form['admin_key']
-
-        # Verify admin key
-        if admin_key != '1234':  # Replace with secure key
-            flash('Invalid admin key')
-            return redirect(url_for('admin_signup'))
-
-        # Check if passwords match
-        if password != confirm_password:
-            flash('Passwords do not match')
-            return redirect(url_for('admin_signup'))
-
-        # Check if email already exists
-        if Admin.query.filter_by(email=email).first():
-            flash('Email already registered')
-            return redirect(url_for('admin_signup'))
-
-        try:
-            # Create new admin
-            hashed_password = generate_password_hash(password)
-            new_admin = Admin(
-                name=name,
-                email=email,
-                password=hashed_password,
-                is_verified=False
-            )
-            db.session.add(new_admin)
-            db.session.commit()
-
-            # Generate and send OTP
-            otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-            new_admin.otp = otp
-            db.session.commit()
-
-            msg = Message('Admin Registration OTP - KisanSetu',
-                         recipients=[email])
-            msg.body = f'Your OTP for admin registration is: {otp}'
-            mail.send(msg)
-
-            session['temp_admin_id'] = new_admin.id
-            return redirect(url_for('admin_otp_verification'))
-
-        except Exception as e:
-            db.session.rollback()
-            flash('Error creating admin account')
-            return redirect(url_for('admin_signup'))
-
-    return render_template('admin_signup.html')
 
 @app.route('/get_pending_products')
 @admin_required
 def get_pending_products():
     try:
         print("Fetching pending products...")  # Debug log
-        # Modified query to exclude rejected products
-        products = Product.query.filter_by(is_approved=False, is_rejected=False).all()
+        # Use ProductQuery to filter by is_approved=False, is_rejected=False
+        products = ProductQuery.filter_by(is_approved=False, is_rejected=False)
         print(f"Found {len(products)} pending products")  # Debug log
-        
+
         result = [{
             'id': p.id,
             'name': p.name,
@@ -576,9 +544,9 @@ def get_pending_products():
             'description': p.description or '',
             'image_url': p.image_url or '',
             'farmer_id': p.farmer_id,
-            'created_at': p.created_at.isoformat()
+            'created_at': p.created_at if p.created_at else None
         } for p in products]
-        
+
         return jsonify(result)
     except Exception as e:
         print(f"Error fetching pending products: {e}")  # Debug log
@@ -587,57 +555,229 @@ def get_pending_products():
 @app.route('/approve_product/<int:product_id>', methods=['POST'])
 @admin_required
 def approve_product(product_id):
-    product = Product.query.get_or_404(product_id)
-    product.is_approved = True
-    db.session.commit()
+    # Fetch product from Supabase
+    resp = supabase.table('products').select('*').eq('id', product_id).execute()
+    product = resp.data[0] if resp.data else None
+    if not product:
+        return jsonify({'error': 'Product not found'}), 404
+    # Update approval status
+    supabase.table('products').update({'is_approved': True, 'is_rejected': False}).eq('id', product_id).execute()
     return jsonify({'message': 'Product approved successfully'})
 
 @app.route('/revoke_product/<int:product_id>', methods=['POST'])
 @admin_required
 def revoke_product(product_id):
     try:
-        product = Product.query.get_or_404(product_id)
-        product.is_approved = False
-        db.session.commit()
+        resp = supabase.table('products').select('*').eq('id', product_id).execute()
+        product = resp.data[0] if resp.data else None
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+        supabase.table('products').update({'is_approved': False}).eq('id', product_id).execute()
         return jsonify({'message': 'Product approval revoked successfully'})
     except Exception as e:
-        db.session.rollback()
         return jsonify({'error': str(e)}), 400
 
 @app.route('/delete_product/<int:product_id>', methods=['DELETE'])
 @admin_required
 def delete_product(product_id):
     try:
-        product = Product.query.get_or_404(product_id)
-        db.session.delete(product)
-        db.session.commit()
+        resp = supabase.table('products').select('*').eq('id', product_id).execute()
+        product = resp.data[0] if resp.data else None
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+        supabase.table('products').delete().eq('id', product_id).execute()
         return jsonify({'message': 'Product deleted successfully'})
     except Exception as e:
-        db.session.rollback()
         return jsonify({'error': str(e)}), 400
 
 @app.route('/reject_product/<int:product_id>', methods=['POST'])
 @admin_required
 def reject_product(product_id):
     try:
-        product = Product.query.get_or_404(product_id)
-        product.is_approved = False
-        product.is_rejected = True  # Set rejected status
-        db.session.commit()
+        resp = supabase.table('products').select('*').eq('id', product_id).execute()
+        product = resp.data[0] if resp.data else None
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+        supabase.table('products').update({'is_approved': False, 'is_rejected': True}).eq('id', product_id).execute()
         return jsonify({'message': 'Product rejected successfully'})
     except Exception as e:
-        db.session.rollback()
         return jsonify({'error': str(e)}), 400
 
 @app.route('/get_rejected_products')
 @admin_required
 def get_rejected_products():
     try:
-        # Only get products that are explicitly rejected
-        products = db.session.query(Product, User).join(User, Product.farmer_id == User.id)\
-            .filter(Product.is_rejected == True).all()
-        
+        # Get rejected products and their farmers
+        products = ProductQuery.filter_by(is_rejected=True)
+        result = []
+        for p in products:
+            farmer = UserQuery.get(p.farmer_id)
+            result.append({
+                'id': p.id,
+                'name': p.name,
+                'category': p.category,
+                'price': p.price,
+                'stock': p.stock,
+                'description': p.description or '',
+                'image_url': p.image_url or '',
+                'farmer_id': p.farmer_id,
+                'farmerName': farmer.name if farmer else '',
+                'created_at': p.created_at if p.created_at else None
+            })
+        return jsonify(result)
+    except Exception as e:
+        print(f"Error fetching rejected products: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get_approved_products')
+def get_approved_products():
+    try:
+        # Get approved products and their farmers
+        products = ProductQuery.filter_by(is_approved=True, is_rejected=False)
+        result = []
+        for p in products:
+            farmer = UserQuery.get(p.farmer_id)
+            result.append({
+                'id': str(p.id),
+                'name': p.name,
+                'category': p.category,
+                'price': float(p.price),
+                'stock': p.stock,
+                'stock_status': 'out_of_stock' if p.stock == 0 else 'low_stock' if p.stock <= 5 else 'in_stock',
+                'description': p.description or '',
+                'image_url': p.image_url or '',
+                'farmer_id': p.farmer_id,
+                'farmerName': farmer.name if farmer else '',
+                'created_at': p.created_at if p.created_at else None
+            })
+        return jsonify(result)
+    except Exception as e:
+        print(f"Error fetching approved products: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get_registered_farmers')
+@admin_required
+def get_registered_farmers():
+    try:
+        # Use UserQuery to get all farmers
+        farmers = UserQuery.filter_by(user_type='farmer')
         return jsonify([{
+            'id': f.id,
+            'name': f.name,
+            'email': f.email,
+            'phone': f.phone,
+            # Remove .isoformat() since created_at is already a string
+            'created_at': f.created_at if f.created_at else None,
+            'is_verified': f.is_verified,
+            'is_approved': f.is_approved
+        } for f in farmers])
+    except Exception as e:
+        print(f"Error fetching registered farmers: {e}")
+        return jsonify([])
+
+@app.route('/get_pending_farmers')
+@admin_required
+def get_pending_farmers():
+    try:
+        # Use UserQuery to get all pending farmers
+        pending_farmers = UserQuery.filter_by(user_type='farmer', is_approved=False)
+        return jsonify([{
+            'id': f.id,
+            'name': f.name,
+            'email': f.email,
+            'phone': f.phone,
+            'created_at': f.created_at.isoformat() if f.created_at else None,
+            'is_verified': f.is_verified,
+            'is_approved': f.is_approved
+        } for f in pending_farmers])
+    except Exception as e:
+        print(f"Error fetching pending farmers: {e}")
+        return jsonify([])
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login_route():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        # Get admin from Supabase
+        response = supabase.table('admins').select('*').eq('email', email).execute()
+        admin = response.data[0] if response.data else None
+
+        if admin and check_password_hash(admin['password'], password):
+            if not admin['is_verified']:
+                # Generate and send OTP
+                otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+                
+                # Update admin OTP in Supabase
+                supabase.table('admins').update({'otp': otp}).eq('id', admin['id']).execute()
+                
+                # Send OTP email
+                try:
+                    msg = Message('Admin Login OTP - KisanSetu', recipients=[email])
+                    msg.body = f'Your OTP for admin login is: {otp}'
+                    mail.send(msg)
+                    session['temp_admin_id'] = admin['id']
+                    return redirect(url_for('admin_otp_verification'))
+                except Exception as e:
+                    flash('Error sending OTP.')
+                    return redirect(url_for('admin_login'))
+
+            session['admin_id'] = admin['id']
+            session['admin_name'] = admin['name']
+            return redirect(url_for('admin_dashboard'))
+        
+        flash('Invalid email or password')
+        return redirect(url_for('admin_login'))
+    
+    return render_template('admin_login.html')
+
+@app.route('/admin/otp-verification', methods=['GET', 'POST'])
+def admin_otp_verification_route():
+    if 'temp_admin_id' not in session:
+        return redirect(url_for('admin_login'))
+        
+    if request.method == 'POST':
+        response = supabase.table('admins').select('*').eq('id', session['temp_admin_id']).execute()
+        admin = response.data[0] if response.data else None
+        
+        if admin and admin['otp'] == request.form['otp']:
+            # Update admin verification status
+            supabase.table('admins').update({
+                'is_verified': True,
+                'otp': None
+            }).eq('id', admin['id']).execute()
+            
+            session['admin_id'] = admin['id']
+            session['admin_name'] = admin['name']
+            return redirect(url_for('admin_dashboard'))
+            
+        flash('Invalid OTP')
+        return redirect(url_for('admin_otp_verification'))
+        
+    return render_template('admin_otp_verification.html')
+
+@app.route('/admin')
+def admin_redirect_route():
+    if 'admin_id' in session:
+        return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('admin_login'))
+
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard_route():
+    return render_template('admin_dashboard.html')
+
+@app.route('/get_pending_products')
+@admin_required
+def get_pending_products_route():
+    try:
+        print("Fetching pending products...")  # Debug log
+        # Use ProductQuery to filter by is_approved=False, is_rejected=False
+        products = ProductQuery.filter_by(is_approved=False, is_rejected=False)
+        print(f"Found {len(products)} pending products")  # Debug log
+
+        result = [{
             'id': p.id,
             'name': p.name,
             'category': p.category,
@@ -646,122 +786,149 @@ def get_rejected_products():
             'description': p.description or '',
             'image_url': p.image_url or '',
             'farmer_id': p.farmer_id,
-            'farmerName': u.name,
-            'created_at': p.created_at.isoformat()
-        } for p, u in products])
+            'created_at': p.created_at if p.created_at else None
+        } for p in products]
+
+        return jsonify(result)
+    except Exception as e:
+        print(f"Error fetching pending products: {e}")  # Debug log
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/approve_product/<int:product_id>', methods=['POST'])
+@admin_required
+def approve_product_route(product_id):
+    # Fetch product from Supabase
+    resp = supabase.table('products').select('*').eq('id', product_id).execute()
+    product = resp.data[0] if resp.data else None
+    if not product:
+        return jsonify({'error': 'Product not found'}), 404
+    # Update approval status
+    supabase.table('products').update({'is_approved': True, 'is_rejected': False}).eq('id', product_id).execute()
+    return jsonify({'message': 'Product approved successfully'})
+
+@app.route('/revoke_product/<int:product_id>', methods=['POST'])
+@admin_required
+def revoke_product_route(product_id):
+    try:
+        resp = supabase.table('products').select('*').eq('id', product_id).execute()
+        product = resp.data[0] if resp.data else None
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+        supabase.table('products').update({'is_approved': False}).eq('id', product_id).execute()
+        return jsonify({'message': 'Product approval revoked successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/delete_product/<int:product_id>', methods=['DELETE'])
+@admin_required
+def delete_product_route(product_id):
+    try:
+        resp = supabase.table('products').select('*').eq('id', product_id).execute()
+        product = resp.data[0] if resp.data else None
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+        supabase.table('products').delete().eq('id', product_id).execute()
+        return jsonify({'message': 'Product deleted successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/reject_product/<int:product_id>', methods=['POST'])
+@admin_required
+def reject_product_route(product_id):
+    try:
+        resp = supabase.table('products').select('*').eq('id', product_id).execute()
+        product = resp.data[0] if resp.data else None
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+        supabase.table('products').update({'is_approved': False, 'is_rejected': True}).eq('id', product_id).execute()
+        return jsonify({'message': 'Product rejected successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/get_rejected_products')
+@admin_required
+def get_rejected_products_route():
+    try:
+        # Get rejected products and their farmers
+        products = ProductQuery.filter_by(is_rejected=True)
+        result = []
+        for p in products:
+            farmer = UserQuery.get(p.farmer_id)
+            result.append({
+                'id': p.id,
+                'name': p.name,
+                'category': p.category,
+                'price': p.price,
+                'stock': p.stock,
+                'description': p.description or '',
+                'image_url': p.image_url or '',
+                'farmer_id': p.farmer_id,
+                'farmerName': farmer.name if farmer else '',
+                'created_at': p.created_at if p.created_at else None
+            })
+        return jsonify(result)
     except Exception as e:
         print(f"Error fetching rejected products: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/get_approved_products')
-def get_approved_products():
+def get_approved_products_route():
     try:
-        products = db.session.query(Product, User).join(
-            User, Product.farmer_id == User.id
-        ).filter(
-            Product.is_approved == True,
-            Product.is_rejected == False
-        ).all()
-        
-        result = [{
-            'id': str(product.id),
-            'name': product.name,
-            'category': product.category,
-            'price': float(product.price),
-            'stock': product.stock,
-            'stock_status': 'out_of_stock' if product.stock == 0 else 'low_stock' if product.stock <= 5 else 'in_stock',
-            'description': product.description or '',
-            'image_url': product.image_url or '',
-            'farmer_id': product.farmer_id,
-            'farmerName': user.name,
-            'created_at': product.created_at.isoformat() if product.created_at else None
-        } for product, user in products]
-        
+        # Get approved products and their farmers
+        products = ProductQuery.filter_by(is_approved=True, is_rejected=False)
+        result = []
+        for p in products:
+            farmer = UserQuery.get(p.farmer_id)
+            result.append({
+                'id': str(p.id),
+                'name': p.name,
+                'category': p.category,
+                'price': float(p.price),
+                'stock': p.stock,
+                'stock_status': 'out_of_stock' if p.stock == 0 else 'low_stock' if p.stock <= 5 else 'in_stock',
+                'description': p.description or '',
+                'image_url': p.image_url or '',
+                'farmer_id': p.farmer_id,
+                'farmerName': farmer.name if farmer else '',
+                'created_at': p.created_at if p.created_at else None
+            })
         return jsonify(result)
     except Exception as e:
         print(f"Error fetching approved products: {e}")
         return jsonify({'error': str(e)}), 500
 
-# Add dummy data generation function
-def generateDummyProducts():
-    dummy_products = []
-    categories = ['vegetables', 'fruits', 'grains', 'pulses']
-    
-    for i in range(20):  # Generate 20 dummy products
-        category = random.choice(categories)
-        price = round(random.uniform(20, 500), 2)
-        dummy_products.append({
-            'id': i + 1,
-            'name': f'Sample {category.capitalize()} {i+1}',
-            'category': category,
-            'price': price,
-            'stock': random.randint(10, 100),
-            'description': f'Fresh {category} from local farmers',
-            'image_url': f'https://picsum.photos/200?random={i}',
-            'farmer_id': 1,
-            'farmerName': 'Sample Farmer',
-            'rating': round(random.uniform(3.0, 5.0), 1),
-            'created_at': datetime.now().isoformat()
-        })
-    
-    return dummy_products
-
-@app.route('/get_farmer_products/<int:farmer_id>')
-def get_farmer_products(farmer_id):
-    products = Product.query.filter_by(farmer_id=farmer_id).all()
-    return jsonify([{
-        'id': p.id,
-        'name': p.name,
-        'category': p.category,
-        'price': float(p.price),
-        'stock': p.stock,
-        'description': p.description,
-        'image_url': p.image_url if p.image_url else f'https://via.placeholder.com/200x200?text={p.name}',
-        'is_approved': p.is_approved,
-        'is_rejected': p.is_rejected,  # Add this field
-        'created_at': p.created_at.isoformat()
-    } for p in products])
-
-@app.route('/approve_farmer/<int:farmer_id>', methods=['POST'])
+@app.route('/get_registered_farmers')
 @admin_required
-def approve_farmer(farmer_id):
+def get_registered_farmers_route():
     try:
-        farmer = User.query.get_or_404(farmer_id)
-        if farmer.user_type != 'farmer':
-            return jsonify({'error': 'User is not a farmer'}), 400
-            
-        farmer.is_approved = True
-        db.session.commit()
-        
-        # Send approval email to farmer
-        try:
-            msg = Message('Your KisanSetu Application is Approved!',
-                         recipients=[farmer.email])
-            msg.body = '''Congratulations! Your farmer application has been approved.
-            You can now login to your account and start listing your products.
-            
-            Thank you for joining KisanSetu!
-            '''
-            mail.send(msg)
-        except Exception as e:
-            print(f"Error sending approval email: {e}")
-            
-        return jsonify({'message': 'Farmer approved successfully'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 400
-
-@app.route('/get_pending_farmers')
-@admin_required
-def get_pending_farmers():
-    try:
-        pending_farmers = User.query.filter_by(user_type='farmer', is_approved=False).all()
+        # Use UserQuery to get all farmers
+        farmers = UserQuery.filter_by(user_type='farmer')
         return jsonify([{
             'id': f.id,
             'name': f.name,
             'email': f.email,
             'phone': f.phone,
-            'created_at': f.created_at.isoformat(),
+            # Remove .isoformat() since created_at is already a string
+            'created_at': f.created_at if f.created_at else None,
+            'is_verified': f.is_verified,
+            'is_approved': f.is_approved
+        } for f in farmers])
+    except Exception as e:
+        print(f"Error fetching registered farmers: {e}")
+        return jsonify([])
+
+@app.route('/get_pending_farmers')
+@admin_required
+def get_pending_farmers_route():
+    try:
+        # Use UserQuery to get all pending farmers
+        pending_farmers = UserQuery.filter_by(user_type='farmer', is_approved=False)
+        return jsonify([{
+            'id': f.id,
+            'name': f.name,
+            'email': f.email,
+            'phone': f.phone,
+            'created_at': f.created_at.isoformat() if f.created_at else None,
             'is_verified': f.is_verified,
             'is_approved': f.is_approved
         } for f in pending_farmers])
@@ -769,23 +936,136 @@ def get_pending_farmers():
         print(f"Error fetching pending farmers: {e}")
         return jsonify([])
 
-@app.route('/get_registered_farmers')
+@app.route('/admin/pending-kyc')
 @admin_required
-def get_registered_farmers():
+def get_pending_kyc_route():
     try:
-        farmers = User.query.filter_by(user_type='farmer').all()
-        return jsonify([{
-            'id': f.id,
-            'name': f.name,
-            'email': f.email,
-            'phone': f.phone,
-            'created_at': f.created_at.isoformat(),
-            'is_verified': f.is_verified,
-            'is_approved': f.is_approved
-        } for f in farmers])
+        # Fetch pending KYC records from Supabase
+        kyc_response = supabase.table('kyc').select('*').eq('status', 'pending').execute()
+        kyc_data = kyc_response.data if kyc_response.data else []
+        result = []
+        for kyc in kyc_data:
+            user = UserQuery.get(kyc['user_id'])
+            # Fetch fruit details from Supabase
+            fruit_resp = supabase.table('fruit').select('*').eq('id', kyc['fruit_id']).execute()
+            fruit = fruit_resp.data[0] if fruit_resp.data else None
+            result.append({
+                'id': kyc['id'],
+                'user_id': kyc['user_id'],
+                'fruit_id': kyc['fruit_id'],
+                'user_name': user.name if user else '',
+                'user_email': user.email if user else '',
+                'user_phone': user.phone if user else '',
+                # Use the string value directly, don't call .isoformat()
+                'registration_date': user.created_at if user and user.created_at else None,
+                'document_type': kyc['document_type'],
+                'document_number': kyc['document_number'],
+                'document_image': kyc['document_image'],
+                'fruit_data': {
+                    'farm_location': fruit['farm_location'] if fruit else '',
+                    'owner_name': fruit['owner_name'] if fruit else '',
+                    'owner_contact': fruit['owner_contact'] if fruit else '',
+                    'certification_type': fruit['certification_type'] if fruit else ''
+                }
+            })
+        return jsonify(result)
     except Exception as e:
-        print(f"Error fetching registered farmers: {e}")
-        return jsonify([])
+        print(f"Error fetching pending approvals: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/approve-farmer/<int:kyc_id>', methods=['POST'])
+@admin_required
+def approve_farmer_kyc_route(kyc_id):
+    try:
+        # Fetch KYC record from Supabase
+        kyc_resp = supabase.table('kyc').select('*').eq('id', kyc_id).execute()
+        kyc = kyc_resp.data[0] if kyc_resp.data else None
+        if not kyc:
+            return jsonify({'error': 'KYC record not found'}), 404
+
+        user = UserQuery.get(kyc['user_id'])
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Update both KYC and farmer status in Supabase
+        supabase.table('kyc').update({'status': 'approved'}).eq('id', kyc_id).execute()
+        supabase.table('users').update({'is_approved': True}).eq('id', user.id).execute()
+
+        # Send combined approval email
+        try:
+            msg = Message('Farmer Registration & KYC Approved - KisanSetu',
+                         recipients=[user.email])
+            msg.body = f'''
+            Dear {user.name},
+
+            Congratulations! Your farmer registration and KYC verification have been approved.
+            You can now login to KisanSetu and start listing your products.
+
+            Your Details:
+            Fruit ID: {kyc['fruit_id']}
+            Document Type: {kyc['document_type']}
+            Document Number: {kyc['document_number']}
+
+            Thank you for choosing KisanSetu!
+
+            '''
+            mail.send(msg)
+        except Exception as e:
+            print(f"Error sending approval email: {e}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Farmer registration and KYC approved successfully'
+        })
+    except Exception as e:
+        print(f"Error in approve_farmer_kyc_route: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/reject-kyc/<int:kyc_id>', methods=['POST'])
+@admin_required
+def reject_kyc_route(kyc_id):
+    try:
+        data = request.json
+        # Fetch KYC record from Supabase
+        kyc_resp = supabase.table('kyc').select('*').eq('id', kyc_id).execute()
+        kyc = kyc_resp.data[0] if kyc_resp.data else None
+        if not kyc:
+            return jsonify({'error': 'KYC record not found'}), 404
+
+        user = UserQuery.get(kyc['user_id'])
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Update KYC status in Supabase
+        supabase.table('kyc').update({'status': 'rejected'}).eq('id', kyc_id).execute()
+
+        # Send rejection email
+        try:
+            msg = Message('KYC Verification Rejected - KisanSetu',
+                         recipients=[user.email])
+            msg.body = f'''
+            Dear {user.name},
+
+            Your KYC verification has been rejected for the following reason:
+            {data.get('reason', 'No reason provided')}
+
+            Please update your KYC information and try again.
+
+            If you have any questions, please contact support.
+
+            Thank you for your understanding.
+            '''
+            mail.send(msg)
+        except Exception as e:
+            print(f"Error sending rejection email: {e}")
+
+        return jsonify({
+            'success': True,
+            'message': 'KYC rejected successfully'
+        })
+    except Exception as e:
+        print(f"Error in reject_kyc_route: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/cart')
 def cart():
@@ -1099,23 +1379,38 @@ def wishlist():
 def get_wishlist():
     if 'user_id' not in session:
         return jsonify({'error': 'Not logged in'}), 401
-        
+
     try:
-        wishlist_items = db.session.query(Wishlist, Product)\
-            .join(Product, Wishlist.product_id == Product.id)\
-            .filter(Wishlist.user_id == session['user_id'])\
-            .all()
-            
-        return jsonify([{
-            'id': item.Product.id,
-            'name': item.Product.name,
-            'price': float(item.Product.price),
-            'category': item.Product.category,
-            'image_url': item.Product.image_url,
-            'description': item.Product.description,
-            'stock': item.Product.stock,
-            'added_on': item.Wishlist.created_at.isoformat()
-        } for item in wishlist_items])
+        # Fetch wishlist items from Supabase
+        wishlist_resp = supabase.table('wishlists').select('*').eq('user_id', session['user_id']).execute()
+        wishlist_items = wishlist_resp.data if wishlist_resp.data else []
+
+        # Fetch all product IDs in wishlist
+        product_ids = [item['product_id'] for item in wishlist_items]
+        products = []
+        if product_ids:
+            products_resp = supabase.table('products').select('*').in_('id', product_ids).execute()
+            products = products_resp.data if products_resp.data else []
+
+        # Map product_id to product details
+        product_map = {p['id']: p for p in products}
+
+        # Build wishlist response
+        result = []
+        for item in wishlist_items:
+            product = product_map.get(item['product_id'])
+            if product:
+                result.append({
+                    'id': product['id'],
+                    'name': product['name'],
+                    'price': float(product['price']),
+                    'category': product['category'],
+                    'image_url': product.get('image_url', ''),
+                    'description': product.get('description', ''),
+                    'stock': product.get('stock', 0),
+                    'added_on': item['created_at']
+                })
+        return jsonify(result)
     except Exception as e:
         print(f"Error fetching wishlist: {e}")
         return jsonify({'error': str(e)}), 500
@@ -1124,73 +1419,61 @@ def get_wishlist():
 def add_to_wishlist(product_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Not logged in'}), 401
-        
+
     try:
-        # Verify product exists first
-        product = Product.query.get(product_id)
-        if not product:
+        # Check if product exists
+        product_resp = supabase.table('products').select('id').eq('id', product_id).execute()
+        if not product_resp.data:
             return jsonify({'error': 'Product not found'}), 404
-            
+
         # Check if already in wishlist
-        existing = Wishlist.query.filter_by(
-            user_id=session['user_id'], 
-            product_id=product_id
-        ).first()
-        
-        if existing:
+        existing = supabase.table('wishlists').select('id').eq('user_id', session['user_id']).eq('product_id', product_id).execute()
+        if existing.data:
             return jsonify({'success': True, 'message': 'Already in wishlist'})
-            
-        # Create new wishlist item with explicit product_id
-        wishlist_item = Wishlist(
-            user_id=session['user_id'],
-            product_id=product_id  # Ensure product_id is not None
-        )
-        
-        db.session.add(wishlist_item)
-        db.session.commit()
-        
+
+        # Add to wishlist
+        supabase.table('wishlists').insert({
+            'user_id': session['user_id'],
+            'product_id': product_id
+        }).execute()
+
         # Get updated count
-        count = Wishlist.query.filter_by(user_id=session['user_id']).count()
-        
+        count_resp = supabase.table('wishlists').select('id').eq('user_id', session['user_id']).execute()
+        count = len(count_resp.data) if count_resp.data else 0
+
         return jsonify({
-            'success': True, 
+            'success': True,
             'message': 'Added to wishlist',
             'count': count
         })
     except Exception as e:
-        db.session.rollback()
-        print(f"Error adding to wishlist: {e}")  # Add logging
+        print(f"Error adding to wishlist: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/remove_from_wishlist/<int:product_id>', methods=['POST'])
 def remove_from_wishlist(product_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Not logged in'}), 401
-        
+
     try:
-        # Find the specific wishlist item to remove
-        wishlist_item = Wishlist.query.filter_by(
-            user_id=session['user_id'],
-            product_id=product_id
-        ).first()
-        
-        if not wishlist_item:
+        # Find the wishlist item
+        existing = supabase.table('wishlists').select('id').eq('user_id', session['user_id']).eq('product_id', product_id).execute()
+        if not existing.data:
             return jsonify({'error': 'Item not found in wishlist'}), 404
-            
-        # Delete the specific item
-        db.session.delete(wishlist_item)
-        db.session.commit()
-        
+
+        wishlist_id = existing.data[0]['id']
+        supabase.table('wishlists').delete().eq('id', wishlist_id).execute()
+
         # Get updated count
-        count = Wishlist.query.filter_by(user_id=session['user_id']).count()
-        
+        count_resp = supabase.table('wishlists').select('id').eq('user_id', session['user_id']).execute()
+        count = len(count_resp.data) if count_resp.data else 0
+
         return jsonify({
-            'success': True, 
+            'success': True,
             'message': 'Removed from wishlist',
             'count': count
         })
     except Exception as e:
-        db.session.rollback()
         print(f"Error removing from wishlist: {e}")
         return jsonify({'error': str(e)}), 500
 
@@ -1268,35 +1551,30 @@ def update_profile_picture():
 @app.route('/verify_fruit_id/<fruit_id>')
 def verify_fruit_id(fruit_id):
     try:
-        # Query the fruit table
-        with db.engine.connect() as conn:
-            result = conn.execute(text("""
-                SELECT farm_size, farm_location, soil_type, irrigation_type, 
-                       certification_type, owner_name, owner_contact, 
-                       registration_authority, is_active 
-                FROM fruit 
-                WHERE id = :fruit_id
-            """), {"fruit_id": fruit_id})
-            fruit = result.fetchone()
-            
-            if fruit and fruit.is_active:
-                return jsonify({
-                    'success': True,
-                    'data': {
-                        'farm_size': float(fruit.farm_size),
-                        'farm_location': fruit.farm_location,
-                        'soil_type': fruit.soil_type,
-                        'irrigation_type': fruit.irrigation_type,
-                        'certification_type': fruit.certification_type,
-                        'owner_name': fruit.owner_name,
-                        'owner_contact': fruit.owner_contact,
-                        'registration_authority': fruit.registration_authority
-                    }
-                })
+        # Query the fruit table using Supabase
+        response = supabase.table('fruit').select(
+            'farm_size, farm_location, soil_type, irrigation_type, certification_type, owner_name, owner_contact, registration_authority, is_active'
+        ).eq('id', fruit_id).execute()
+        fruit = response.data[0] if response.data else None
+
+        if fruit and fruit.get('is_active'):
             return jsonify({
-                'success': False, 
-                'message': 'Invalid or inactive Fruit ID'
+                'success': True,
+                'data': {
+                    'farm_size': float(fruit['farm_size']),
+                    'farm_location': fruit['farm_location'],
+                    'soil_type': fruit['soil_type'],
+                    'irrigation_type': fruit['irrigation_type'],
+                    'certification_type': fruit['certification_type'],
+                    'owner_name': fruit['owner_name'],
+                    'owner_contact': fruit['owner_contact'],
+                    'registration_authority': fruit['registration_authority']
+                }
             })
+        return jsonify({
+            'success': False, 
+            'message': 'Invalid or inactive Fruit ID'
+        })
     except Exception as e:
         print(f"Error verifying fruit ID: {e}")
         return jsonify({
@@ -1345,7 +1623,7 @@ def delete_farmer_product(product_id):
         print(f"Error deleting product: {e}")
         return jsonify({'error': 'Failed to delete product'}), 500
 
-@app.route('/get_farmer_sales_summary/<int:farmer_id>')
+@app.route('/get_farmer_sales_summary/<farmer_id>')
 def get_farmer_sales_summary(farmer_id):
     try:
         # Verify farmer access
@@ -1363,7 +1641,7 @@ def get_farmer_sales_summary(farmer_id):
         # Query all orders
         orders = Order.query.all()
         for order in orders:
-            farmer_total = 0
+            farmer_total = 0;
             farmer_items = []
             
             # Check each item in the order
@@ -1457,24 +1735,28 @@ def submit_kyc():
             
             # Save file
             file.save(filepath)
-            
-            # Create KYC record
-            kyc = KYC(
-                user_id=session['user_id'],
-                fruit_id=request.form['fruit_id'],
-                city=request.form['city'],
-                state=request.form['state'],
-                country=request.form['country'],
-                document_type=request.form['document_type'],
-                document_number=request.form['document_number'],
-                document_image=f"/static/product_images/kyc_docs/{filename}"
-            )
-            
-            db.session.add(kyc)
-            db.session.commit()
+
+            # Save KYC record to Supabase
+            kyc_data = {
+                'user_id': session['user_id'],
+                'fruit_id': request.form['fruit_id'],
+                'city': request.form['city'],
+                'state': request.form['state'],
+                'country': request.form['country'],
+                'document_type': request.form['document_type'],
+                'document_number': request.form['document_number'],
+                'document_image': f"/static/product_images/kyc_docs/{filename}",
+                'status': 'pending',
+                'created_at': datetime.utcnow().isoformat()
+            }
+            kyc_response = supabase.table('kyc').insert(kyc_data).execute()
+            kyc_record = kyc_response.data[0] if kyc_response.data else None
+            if not kyc_record:
+                print("Failed to insert KYC record in Supabase")
+                return jsonify({'error': 'Failed to submit KYC. Please try again.'}), 500
 
             # Send confirmation email to farmer
-            user = User.query.get(session['user_id'])
+            user = UserQuery.get(session['user_id'])
             try:
                 msg = Message('KYC Application Submitted - KisanSetu',
                              recipients=[user.email])
@@ -1522,7 +1804,7 @@ def submit_kyc():
             
         return jsonify({'error': 'Invalid file type'}), 400
     except Exception as e:
-        db.session.rollback()
+        print(f"Error submitting KYC: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/farmer/remove_product/<product_id>', methods=['POST', 'DELETE'])
@@ -1557,324 +1839,54 @@ def kyc_verification():
         return redirect(url_for('login'))
     return render_template('kyc.html')
 
-@app.route('/admin/pending-kyc')
-@admin_required
-def get_pending_kyc():
+def check_existing_user(email):
+    """Check if a user with the given email already exists in Supabase."""
     try:
-        # Join KYC with User and get pending verifications where user is not approved
-        kyc_data = db.session.query(KYC, User)\
-            .join(User)\
-            .filter(KYC.status == 'pending')\
-            .filter(User.is_approved == False)\
-            .filter(User.user_type == 'farmer')\
-            .all()
-        
-        result = []
-        for kyc, user in kyc_data:
-            # Get fruit details
-            with db.engine.connect() as conn:
-                fruit_result = conn.execute(text("""
-                    SELECT * FROM fruit WHERE id = :fruit_id
-                """), {"fruit_id": kyc.fruit_id}).fetchone()
-                
-                if fruit_result:
-                    result.append({
-                        'id': kyc.id,
-                        'user_id': user.id,
-                        'fruit_id': kyc.fruit_id,
-                        'user_name': user.name,
-                        'user_email': user.email,
-                        'user_phone': user.phone,
-                        'registration_date': user.created_at.isoformat(),
-                        'document_type': kyc.document_type,
-                        'document_number': kyc.document_number,
-                        'document_image': kyc.document_image,
-                        'fruit_data': {
-                            'farm_location': fruit_result.farm_location,
-                            'owner_name': fruit_result.owner_name,
-                            'owner_contact': fruit_result.owner_contact,
-                            'certification_type': fruit_result.certification_type
-                        }
-                    })
-        
-        return jsonify(result)
+        response = supabase.table('users').select('id').eq('email', email).execute()
+        return bool(response.data)
     except Exception as e:
-        print(f"Error fetching pending approvals: {e}")
-        return jsonify({'error': str(e)}), 500
+        print(f"Error checking existing user: {e}")
+        return False
 
-@app.route('/admin/approve-farmer/<int:kyc_id>', methods=['POST'])
-@admin_required
-def approve_farmer_kyc(kyc_id):
-    try:
-        kyc = KYC.query.get_or_404(kyc_id)
-        user = User.query.get(kyc.user_id)
-        
-        # Update both KYC and farmer status
-        kyc.status = 'approved'
-        user.is_approved = True
-        db.session.commit()
-        
-        # Send combined approval email
-        try:
-            msg = Message('Farmer Registration & KYC Approved - KisanSetu',
-                         recipients=[user.email])
-            msg.body = f'''
-            Dear {user.name},
-
-            Congratulations! Your farmer registration and KYC verification have been approved.
-            You can now login to KisanSetu and start listing your products.
-
-            Your Details:
-            Fruit ID: {kyc.fruit_id}
-            Document Type: {kyc.document_type}
-            Document Number: {kyc.document_number}
-
-            Thank you for choosing KisanSetu!
-            '''
-            mail.send(msg)
-        except Exception as e:
-            print(f"Error sending approval email: {e}")
-        
-        return jsonify({
-            'success': True,
-            'message': 'Farmer registration and KYC approved successfully'
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/admin/reject-kyc/<int:kyc_id>', methods=['POST'])
-@admin_required
-def reject_kyc(kyc_id):
-    try:
-        data = request.json
-        kyc = KYC.query.get_or_404(kyc_id)
-        user = User.query.get(kyc.user_id)
-        
-        # Update KYC status
-        kyc.status = 'rejected'
-        db.session.commit()
-        
-        # Send rejection email
-        try:
-            msg = Message('KYC Verification Rejected - KisanSetu',
-                         recipients=[user.email])
-            msg.body = f'''
-            Dear {user.name},
-
-            Your KYC verification has been rejected for the following reason:
-            {data.get('reason', 'No reason provided')}
-
-            Please update your KYC information and try again.
-
-            If you have any questions, please contact support.
-
-            Thank you for your understanding.
-            '''
-            mail.send(msg)
-        except Exception as e:
-            print(f"Error sending rejection email: {e}")
-        
-        return jsonify({
-            'success': True,
-            'message': 'KYC rejected successfully'
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/cart/add', methods=['POST'])
+@app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Please login first'}), 401
-
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'message': 'No data provided'}), 400
-
-        product_id = data.get('product_id')
-        quantity = data.get('quantity', 1)
-
-        # Get product and check stock
-        product = Product.query.get(product_id)
-        if not product:
-            return jsonify({'success': False, 'message': 'Product not found'}), 404
-
-        # Get current cart item if exists
-        cart_item = Cart.query.filter_by(
-            user_id=session['user_id'],
-            product_id=product_id
-        ).first()
-
-        # Calculate total requested quantity
-        current_quantity = cart_item.quantity if cart_item else 0
-        new_total_quantity = current_quantity + quantity
-
-        # Check if product is out of stock
-        if product.stock == 0:
-            return jsonify({
-                'success': False,
-                'message': 'Product is out of stock',
-                'available_stock': 0
-            }), 400
-
-        # Check if enough stock is available
-        if new_total_quantity > product.stock:
-            return jsonify({
-                'success': False,
-                'message': f'Cannot add more. Only {product.stock - current_quantity} more items available',
-                'available_stock': product.stock,
-                'current_cart_quantity': current_quantity,
-                'remaining_available': product.stock - current_quantity
-            }), 400
-
-        # Update or create cart item
-        if cart_item:
-            cart_item.quantity = new_total_quantity
-        else:
-            cart_item = Cart(
-                user_id=session['user_id'],
-                product_id=product_id,
-                quantity=quantity
-            )
-            db.session.add(cart_item)
-
-        db.session.commit()
-
-        # Get updated cart count
-        cart_count = Cart.query.filter_by(user_id=session['user_id']).count()
-
-        return jsonify({
-            'success': True,
-            'message': 'Product added to cart successfully',
-            'cartCount': cart_count,
-            'current_quantity': new_total_quantity,
-            'available_stock': product.stock,
-            'remaining_stock': product.stock - new_total_quantity
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error adding to cart: {e}")
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 500
-
-@app.route('/cart/items')
-def get_cart_items():
-    if 'user_id' not in session:
         return jsonify({'error': 'Not logged in'}), 401
-        
-    try:
-        # Get cart items with product details
-        cart_items = db.session.query(Cart, Product)\
-            .join(Product, Cart.product_id == Product.id)\
-            .filter(Cart.user_id == session['user_id'])\
-            .all()
-            
-        return jsonify([{
-            'id': item.Cart.id,
-            'product_id': item.Product.id,
-            'name': item.Product.name,
-            'price': float(item.Product.price),
-            'quantity': item.Cart.quantity,
-            'stock': item.Product.stock,
-            'image_url': item.Product.image_url,
-            'subtotal': float(item.Product.price * item.Cart.quantity)
-        } for item in cart_items])
-    except Exception as e:
-        print(f"Error fetching cart items: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/cart/update', methods=['POST'])
-def update_cart():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-        
-    try:
-        data = request.get_json()
-        product_id = data.get('product_id')
-        quantity = data.get('quantity', 0)
-        
-        # Get product to check stock
-        product = Product.query.get(product_id)
-        if not product:
-            return jsonify({'error': 'Product not found'}), 404
-            
-        # Check if enough stock available
-        if quantity > product.stock:
-            return jsonify({
-                'error': f'Only {product.stock} items available'
-            }), 400
-            
-        # Update cart item
-        cart_item = Cart.query.filter_by(
-            user_id=session['user_id'],
-            product_id=product_id
-        ).first()
-        
-        if cart_item:
-            cart_item.quantity = quantity
-            db.session.commit()
-            
-        return jsonify({
-            'success': True,
-            'message': 'Cart updated successfully'
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/cart/remove/<int:product_id>', methods=['DELETE'])
-def remove_from_cart(product_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-        
-    try:
-        Cart.query.filter_by(
-            user_id=session['user_id'],
-            product_id=product_id
-        ).delete()
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Item removed from cart'
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/refill_stock/<int:product_id>', methods=['POST'])
-def refill_stock(product_id):
-    if 'user_id' not in session or session.get('user_type') != 'farmer':
-        return jsonify({'error': 'Unauthorized'}), 401
 
     try:
         data = request.json
-        new_stock = data.get('stock')
+        product_id = data.get('product_id')
+        quantity = int(data.get('quantity', 1))
 
-        if not new_stock or new_stock <= 0:
-            return jsonify({'error': 'Invalid stock quantity'}), 400
+        # Check if product exists
+        product_resp = supabase.table('products').select('id').eq('id', product_id).execute()
+        if not product_resp.data:
+            return jsonify({'error': 'Product not found'}), 404
 
-        product = Product.query.filter_by(id=product_id, farmer_id=session['user_id']).first()
-        if not product:
-            return jsonify({'error': 'Product not found or unauthorized'}), 404
+        # Check if already in cart
+        existing = supabase.table('cart').select('id', 'quantity').eq('user_id', session['user_id']).eq('product_id', product_id).execute()
+        if existing.data:
+            # Update quantity if already in cart
+            cart_id = existing.data[0]['id']
+            new_quantity = existing.data[0]['quantity'] + quantity
+            supabase.table('cart').update({'quantity': new_quantity, 'updated_at': datetime.utcnow().isoformat()}).eq('id', cart_id).execute()
+        else:
+            # Add new cart item
+            supabase.table('cart').insert({
+                'user_id': session['user_id'],
+                'product_id': product_id,
+                'quantity': quantity,
+                'created_at': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat()
+            }).execute()
 
-        product.stock = new_stock
-        db.session.commit()
-
-        return jsonify({'success': True, 'message': 'Stock refilled successfully'})
+        return jsonify({'success': True, 'message': 'Product added to cart'})
     except Exception as e:
-        db.session.rollback()
-        print(f"Error refilling stock: {e}")
-        return jsonify({'error': 'Failed to refill stock'}), 500
+        print(f"Error adding to cart: {e}")
+        return jsonify({'error': 'Failed to add product to cart'}), 500
 
 if __name__ == '__main__':
-    pymysql.install_as_MySQLdb()
     init_db()
-    add_profile_pic_column()  # Add this line
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
+
