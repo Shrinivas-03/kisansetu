@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timezone
 from supabase import create_client
 from flask_mail import Mail, Message
 import os, random, time
@@ -1080,43 +1080,54 @@ def checkout():
         return redirect(url_for('login'))  # Redirect to login if not logged in
     
     try:
-        # Get cart items with a single query
-        cart_items = db.session.query(Cart, Product)\
-            .join(Product, Cart.product_id == Product.id)\
-            .filter(Cart.user_id == session['user_id'])\
-            .all()
+        # Get cart items from Supabase
+        cart_resp = supabase.table('cart').select('*').eq('user_id', session['user_id']).execute()
+        cart_items = cart_resp.data if cart_resp.data else []
         
         if not cart_items:
             flash('Your cart is empty. Add items to proceed to checkout.')
-            return redirect(url_for('cart'))  # Redirect to cart if empty
+            return redirect(url_for('cart'))
         
-        # Get user details
-        user = User.query.get(session['user_id'])
+        # Get product details for cart items
+        product_ids = [item['product_id'] for item in cart_items]
+        products_resp = supabase.table('products').select('*').in_('id', product_ids).execute()
+        products = {str(p['id']): p for p in (products_resp.data or [])}
+        
+        # Format cart items with product details
+        formatted_items = []
+        subtotal = 0
+        for item in cart_items:
+            product = products.get(str(item['product_id']))
+            if product:
+                item_subtotal = float(product['price']) * item['quantity']
+                formatted_items.append({
+                    'id': item['id'],
+                    'product_id': product['id'],
+                    'name': product['name'],
+                    'price': float(product['price']),
+                    'quantity': item['quantity'],
+                    'subtotal': item_subtotal
+                })
+                subtotal += item_subtotal
+        
+        # Get user details from Supabase
+        user_resp = supabase.table('users').select('*').eq('id', session['user_id']).execute()
+        user = user_resp.data[0] if user_resp.data else None
+        
         if not user:
             flash('User not found. Please log in again.')
-            return redirect(url_for('login'))  # Redirect to login if user not found
+            return redirect(url_for('login'))
         
-        # Calculate totals
-        subtotal = sum(float(item.Product.price) * item.Cart.quantity for item in cart_items)
         delivery_fee = 40  # Fixed delivery fee
         total = subtotal + delivery_fee
         
-        # Format cart items for display
-        formatted_items = [{
-            'id': item.Cart.id,
-            'product_id': item.Product.id,
-            'name': item.Product.name,
-            'price': float(item.Product.price),
-            'quantity': item.Cart.quantity,
-            'subtotal': float(item.Product.price * item.Cart.quantity)
-        } for item in cart_items]
-        
-        return render_template('checkout.html', 
-                               user=user,
-                               cart_items=formatted_items,
-                               subtotal=subtotal,
-                               delivery_fee=delivery_fee,
-                               total=total)
+        return render_template('checkout.html',
+                             user=user,
+                             cart_items=formatted_items,
+                             subtotal=subtotal,
+                             delivery_fee=delivery_fee,
+                             total=total)
+                             
     except Exception as e:
         print(f"Error loading checkout page: {e}")
         flash('An error occurred while loading the checkout page. Please try again.')
@@ -1646,7 +1657,7 @@ def get_farmer_sales_summary(farmer_id):
             
             # Check each item in the order
             for item in order.items:
-                product = Product.query.get(item.get('product_id'))
+                product = db.session.get(Product, item.get('product_id'))
                 if product and product.farmer_id == farmer_id:
                     item_total = float(item.get('price', 0)) * int(item.get('quantity', 0))
                     farmer_total += item_total
@@ -1848,42 +1859,148 @@ def check_existing_user(email):
         print(f"Error checking existing user: {e}")
         return False
 
-@app.route('/add_to_cart', methods=['POST'])
-def add_to_cart():
+@app.route('/cart/add', methods=['POST'])
+def add_to_cart_route():
     if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-
+        return jsonify({'error': 'Please login first'}), 401
+        
     try:
         data = request.json
         product_id = data.get('product_id')
         quantity = int(data.get('quantity', 1))
 
-        # Check if product exists
-        product_resp = supabase.table('products').select('id').eq('id', product_id).execute()
-        if not product_resp.data:
-            return jsonify({'error': 'Product not found'}), 404
+        # Get current UTC time
+        current_time = datetime.now(timezone.utc)
 
-        # Check if already in cart
-        existing = supabase.table('cart').select('id', 'quantity').eq('user_id', session['user_id']).eq('product_id', product_id).execute()
-        if existing.data:
+        # Validate product existence and stock
+        product_resp = supabase.table('products').select('*').eq('id', product_id).execute()
+        product = product_resp.data[0] if product_resp.data else None
+        
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+            
+        if product['stock'] < quantity:
+            return jsonify({'error': 'Not enough stock available'}), 400
+
+        # Check if product already in cart
+        cart_resp = supabase.table('cart').select('*').eq('user_id', session['user_id']).eq('product_id', product_id).execute()
+        existing_item = cart_resp.data[0] if cart_resp.data else None
+
+        if existing_item:
             # Update quantity if already in cart
-            cart_id = existing.data[0]['id']
-            new_quantity = existing.data[0]['quantity'] + quantity
-            supabase.table('cart').update({'quantity': new_quantity, 'updated_at': datetime.utcnow().isoformat()}).eq('id', cart_id).execute()
+            new_quantity = existing_item['quantity'] + quantity
+            supabase.table('cart').update({
+                'quantity': new_quantity,
+                'updated_at': current_time.isoformat()
+            }).eq('id', existing_item['id']).execute()
         else:
             # Add new cart item
             supabase.table('cart').insert({
                 'user_id': session['user_id'],
                 'product_id': product_id,
                 'quantity': quantity,
-                'created_at': datetime.utcnow().isoformat(),
-                'updated_at': datetime.utcnow().isoformat()
+                'created_at': current_time.isoformat(),
+                'updated_at': current_time.isoformat()
             }).execute()
 
-        return jsonify({'success': True, 'message': 'Product added to cart'})
+        # Get updated cart count - fixed to use len() instead of count
+        count_resp = supabase.table('cart').select('*').eq('user_id', session['user_id']).execute()
+        cart_count = len(count_resp.data) if count_resp.data else 0
+
+        return jsonify({
+            'message': 'Product added to cart successfully',
+            'cart_count': cart_count
+        })
+
     except Exception as e:
         print(f"Error adding to cart: {e}")
-        return jsonify({'error': 'Failed to add product to cart'}), 500
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/cart/items')
+def get_cart_items():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Please login first'}), 401
+        
+    try:
+        # Get cart items with product details
+        cart_resp = supabase.table('cart').select('*').eq('user_id', session['user_id']).execute()
+        cart_items = cart_resp.data if cart_resp.data else []
+        
+        if not cart_items:
+            return jsonify([])
+            
+        # Get all product IDs in cart
+        product_ids = [item['product_id'] for item in cart_items]
+        
+        # Fetch products in a single query
+        products_resp = supabase.table('products').select('*').in_('id', product_ids).execute()
+        products = products_resp.data if products_resp.data else []
+        
+        # Create product lookup map
+        product_map = {p['id']: p for p in products}
+        
+        # Build response with product details
+        result = []
+        for item in cart_items:
+            product = product_map.get(item['product_id'])
+            if product:
+                result.append({
+                    'cart_id': item['id'],
+                    'product_id': product['id'],
+                    'name': product['name'],
+                    'price': float(product['price']),
+                    'quantity': item['quantity'],
+                    'stock': product['stock'],
+                    'image_url': product.get('image_url', ''),
+                    'description': product.get('description', ''),
+                    'category': product['category'],
+                    'subtotal': float(product['price']) * item['quantity']
+                })
+        
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"Error fetching cart items: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/cart/remove/<int:cart_id>', methods=['POST'])
+def remove_from_cart(cart_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    try:
+        # First verify the cart item belongs to the user and get it
+        cart_resp = supabase.table('cart').select('*').eq('id', cart_id).eq('user_id', session['user_id']).execute()
+        if not cart_resp.data:
+            return jsonify({'error': 'Cart item not found or unauthorized'}), 404
+
+        # Delete the cart item
+        supabase.table('cart').delete().eq('id', cart_id).execute()
+
+        # Get updated cart count - get all remaining cart items for the user
+        remaining_cart_resp = supabase.table('cart').select('*').eq('user_id', session['user_id']).execute()
+        cart_count = len(remaining_cart_resp.data) if remaining_cart_resp.data else 0
+
+        return jsonify({
+            'success': True,
+            'message': 'Item removed from cart',
+            'cart_count': cart_count
+        })
+
+    except Exception as e:
+        print(f"Error removing from cart: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/test-email')
+def test_email():
+    try:
+        msg = Message('Test Email from KisanSetu',
+                     recipients=['your_email@example.com'])  # Replace with your email
+        msg.body = 'This is a test email from the KisanSetu application.'
+        mail.send(msg)
+        return 'Test email sent successfully!'
+    except Exception as e:
+        return f'Error sending test email: {str(e)}'
 
 if __name__ == '__main__':
     init_db()

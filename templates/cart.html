@@ -226,7 +226,7 @@
                         </div>
                         <div class="text-right">
                             <p class="font-bold">₹${item.subtotal.toFixed(2)}</p>
-                            <button onclick="removeFromCart(${item.product_id})"
+                            <button onclick="removeFromCart(${item.cart_id})"
                                     class="mt-2 text-red-500 hover:text-red-700 transition-colors">
                                 <i class="fas fa-trash"></i> Remove
                             </button>
@@ -302,29 +302,129 @@
             }
         }
 
-        async function removeFromCart(productId) {
-            if (!confirm('Are you sure you want to remove this item?')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/cart/remove/${productId}`, {
-                    method: 'DELETE',
+        function removeFromCart(cartId) {
+            if (confirm('Are you sure you want to remove this item?')) {
+                fetch(`/cart/remove/${cartId}`, {
+                    method: 'POST',
                     credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the item from the DOM
+                        const cartItem = document.getElementById(`cart-item-${cartId}`);
+                        if (cartItem) {
+                            cartItem.remove();
+                        }
+                        // Reload cart to update totals
+                        loadCart();
+                        // Show success notification
+                        showNotification('Item removed from cart');
+                    } else {
+                        showNotification(data.error || 'Failed to remove item', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Failed to remove item from cart', 'error');
                 });
-
-                const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(result.error || 'Failed to remove item');
-                }
-
-                loadCart();
-                showNotification('Item removed from cart');
-            } catch (error) {
-                console.error('Error removing item:', error);
-                showNotification(error.message || 'Failed to remove item', 'error');
             }
         }
+
+        function updateCartQuantity(cartId, newQuantity) {
+            fetch(`/cart/update/${cartId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ quantity: newQuantity }),
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update subtotal display
+                    document.getElementById(`subtotal-${cartId}`).textContent = 
+                        `₹${data.new_subtotal.toFixed(2)}`;
+                    // Recalculate cart total
+                    calculateCartTotal();
+                } else {
+                    alert(data.error || 'Failed to update quantity');
+                    // Reset quantity input to previous value
+                    loadCartItems();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update cart');
+                loadCartItems();
+            });
+        }
+
+        function loadCartItems() {
+            fetch('/cart/items', {
+                credentials: 'include'
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to fetch cart items');
+                return response.json();
+            })
+            .then(items => {
+                // Update cart display with items
+                displayCartItems(items);
+                calculateCartTotal();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('cartItems').innerHTML = 
+                    '<p class="text-red-500">Error loading cart items</p>';
+            });
+        }
+
+        // Add this function to update cart display
+        function displayCartItems(items) {
+            const cartContainer = document.getElementById('cartItems');
+            if (items.length === 0) {
+                cartContainer.innerHTML = '<p class="text-gray-500 text-center">Your cart is empty</p>';
+                return;
+            }
+            
+            cartContainer.innerHTML = items.map(item => `
+                <div class="flex items-center gap-4 border-b py-4" id="cart-item-${item.cart_id}">
+                    <img src="${item.image_url || '/static/placeholder.png'}" 
+                         alt="${item.name}" 
+                         class="w-24 h-24 object-cover rounded">
+                    <div class="flex-1">
+                        <h3 class="font-bold">${item.name}</h3>
+                        <p class="text-gray-600">₹${item.price}/kg</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <button onclick="updateCartQuantity(${item.cart_id}, ${item.quantity - 1})"
+                                    class="px-2 py-1 bg-gray-200 rounded"
+                                    ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
+                            <input type="number" 
+                                   value="${item.quantity}" 
+                                   min="1" 
+                                   max="${item.stock}"
+                                   class="w-16 text-center border rounded"
+                                   onchange="updateCartQuantity(${item.cart_id}, this.value)">
+                            <button onclick="updateCartQuantity(${item.cart_id}, ${item.quantity + 1})"
+                                    class="px-2 py-1 bg-gray-200 rounded"
+                                    ${item.quantity >= item.stock ? 'disabled' : ''}>+</button>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold" id="subtotal-${item.cart_id}">₹${item.subtotal.toFixed(2)}</p>
+                        <button onclick="removeFromCart(${item.cart_id})"
+                                class="text-red-500 mt-2">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', loadCartItems);
 
         async function proceedToCheckout() {
             const checkoutBtn = document.querySelector('button[onclick="proceedToCheckout()"]');
