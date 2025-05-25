@@ -1247,53 +1247,68 @@ def place_order():
         
         # Check stock availability again before placing order
         for item in items:
-            product = db.session.get(Product, item.get('product_id'))
+            product_resp = supabase.table('products').select('*').eq('id', item.get('product_id')).execute()
+            product = product_resp.data[0] if product_resp.data else None
+            
             if not product:
                 return jsonify({
                     'success': False,
-                    'message': f'Product {item.get("name")} not found'
+                    'message': f'Product not found'
                 })
             
-            if product.stock < item.get('quantity', 0):
+            if product['stock'] < item.get('quantity', 0):
                 return jsonify({
                     'success': False,
-                    'message': f'Not enough stock for {product.name}. Available: {product.stock}'
+                    'message': f'Not enough stock for {product["name"]}. Available: {product["stock"]}'
                 })
             
-            # Update stock
-            product.stock -= item.get('quantity', 0)
+            # Update stock in Supabase
+            new_stock = product['stock'] - item.get('quantity', 0)
+            supabase.table('products').update({'stock': new_stock}).eq('id', product['id']).execute()
         
-        # Create new order
-        order = Order(
-            user_id=session['user_id'],
-            total_amount=data['total_amount'],
-            delivery_fee=data['delivery_fee'],
-            payment_method=data['payment_method'],
-            delivery_details=data['delivery_details'],
-            items=items,
-            status='Pending'
-        )
+        # Create new order in Supabase
+        order_data = {
+            'user_id': session['user_id'],
+            'total_amount': data['total_amount'],
+            'delivery_fee': data['delivery_fee'],
+            'payment_method': data['payment_method'],
+            'delivery_details': data['delivery_details'],
+            'items': items,
+            'status': 'Pending',
+            'created_at': datetime.utcnow().isoformat(),
+            'payment_status': 'Pending'
+        }
         
-        db.session.add(order)
-        db.session.commit()
+        order_resp = supabase.table('orders').insert(order_data).execute()
+        new_order = order_resp.data[0] if order_resp.data else None
+        
+        if not new_order:
+            return jsonify({'error': 'Failed to create order'}), 500
+        
+        # Clear user's cart
+        supabase.table('cart').delete().eq('user_id', session['user_id']).execute()
         
         # Generate order ID
-        order_id = f"KS{order.id:06d}"
+        order_id = f"KS{new_order['id']:06d}"
         
+        # Send order confirmation email
         try:
-            # Send order confirmation email
-            msg = Message('Order Confirmation - KisanSetu',
-                        recipients=[session.get('user_email')])
-            msg.body = f'''
-            Thank you for your order!
+            user_resp = supabase.table('users').select('*').eq('id', session['user_id']).execute()
+            user = user_resp.data[0] if user_resp.data else None
             
-            Order ID: {order_id}
-            Total Amount: ₹{data['total_amount']}
-            Delivery Address: {data['delivery_details']['address']}
-            
-            Your order will be delivered soon.
-            '''
-            mail.send(msg)
+            if user and user.get('email'):
+                msg = Message('Order Confirmation - KisanSetu',
+                            recipients=[user['email']])
+                msg.body = f'''
+                Thank you for your order!
+                
+                Order ID: {order_id}
+                Total Amount: ₹{data['total_amount']}
+                Delivery Address: {data['delivery_details'].get('address', '')}
+                
+                Your order will be delivered soon.
+                '''
+                mail.send(msg)
         except Exception as e:
             print(f"Error sending confirmation email: {e}")
         
@@ -1304,7 +1319,6 @@ def place_order():
         })
         
     except Exception as e:
-        db.session.rollback()
         print(f"Error placing order: {e}")
         return jsonify({'error': str(e)}), 500
 
