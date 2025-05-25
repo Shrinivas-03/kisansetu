@@ -2005,6 +2005,65 @@ def remove_from_cart(cart_id):
         print(f"Error removing from cart: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/cart/update', methods=['POST'])
+def update_cart():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Please login first'}), 401
+        
+    try:
+        data = request.json
+        product_id = data.get('product_id')
+        new_quantity = int(data.get('quantity', 1))
+
+        if new_quantity < 1:
+            return jsonify({'error': 'Invalid quantity'}), 400
+
+        # Check product availability and stock
+        product_resp = supabase.table('products').select('*').eq('id', product_id).execute()
+        product = product_resp.data[0] if product_resp.data else None
+        
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+            
+        if product['stock'] < new_quantity:
+            return jsonify({
+                'error': f"Only {product['stock']} items available in stock",
+                'available_stock': product['stock']
+            }), 400
+
+        # Update or create cart item
+        cart_resp = supabase.table('cart').select('*').eq('user_id', session['user_id']).eq('product_id', product_id).execute()
+        cart_item = cart_resp.data[0] if cart_resp.data else None
+
+        current_time = datetime.now(timezone.utc).isoformat()
+
+        if cart_item:
+            # Update existing cart item
+            supabase.table('cart').update({
+                'quantity': new_quantity,
+                'updated_at': current_time
+            }).eq('id', cart_item['id']).execute()
+        else:
+            # Create new cart item
+            supabase.table('cart').insert({
+                'user_id': session['user_id'],
+                'product_id': product_id,
+                'quantity': new_quantity,
+                'created_at': current_time,
+                'updated_at': current_time
+            }).execute()
+
+        return jsonify({
+            'success': True,
+            'message': 'Cart updated successfully',
+            'new_quantity': new_quantity,
+            'subtotal': float(product['price']) * new_quantity
+        })
+
+    except Exception as e:
+        print(f"Error updating cart: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/test-email')
 def test_email():
     try:
@@ -2015,6 +2074,37 @@ def test_email():
         return 'Test email sent successfully!'
     except Exception as e:
         return f'Error sending test email: {str(e)}'
+
+@app.route('/get_farmer_products/<int:farmer_id>')
+def get_farmer_products(farmer_id):
+    if 'user_id' not in session or int(session['user_id']) != farmer_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        # Get products for the farmer
+        response = supabase.table('products').select('*').eq('farmer_id', farmer_id).execute()
+        
+        if not response.data:
+            return jsonify([])  # Return empty array if no products found
+            
+        # Format the response
+        products = [{
+            'id': product['id'],
+            'name': product['name'],
+            'category': product['category'],
+            'price': float(product['price']),
+            'stock': product['stock'],
+            'image_url': product.get('image_url', ''),
+            'description': product.get('description', ''),
+            'is_approved': product.get('is_approved', False),
+            'is_rejected': product.get('is_rejected', False)
+        } for product in response.data]
+        
+        return jsonify(products)
+        
+    except Exception as e:
+        print(f"Error fetching farmer products: {e}")
+        return jsonify({'error': 'Failed to fetch products'}), 500
 
 if __name__ == '__main__':
     init_db()

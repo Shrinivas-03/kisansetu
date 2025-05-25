@@ -200,52 +200,55 @@
                     return;
                 }
 
+                let subtotal = 0;
                 // Display cart items
-                cartItems.innerHTML = items.map(item => `
-                    <div class="flex items-center gap-4 p-4 border rounded-lg mb-4 hover:shadow-md transition-shadow">
-                        <img src="${item.image_url || 'https://via.placeholder.com/100'}" 
-                             alt="${item.name}"
-                             class="w-24 h-24 object-cover rounded-lg"
-                             onerror="this.src='https://via.placeholder.com/100'">
-                        <div class="flex-1">
-                            <h3 class="font-bold text-lg">${item.name}</h3>
-                            <p class="text-green-600">₹${item.price.toFixed(2)}/kg</p>
-                            <div class="flex items-center gap-2 mt-2">
-                                <button onclick="updateQuantity(${item.product_id}, ${item.quantity - 1})"
-                                        class="quantity-btn rounded px-3 py-1 bg-gray-100 hover:bg-green-500 hover:text-white transition-colors"
-                                        ${item.quantity <= 1 ? 'disabled style="opacity: 0.5;"' : ''}>
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                <span class="px-4 py-1 border rounded">${item.quantity}</span>
-                                <button onclick="updateQuantity(${item.product_id}, ${item.quantity + 1})"
-                                        class="quantity-btn rounded px-3 py-1 bg-gray-100 hover:bg-green-500 hover:text-white transition-colors"
-                                        ${item.quantity >= item.stock ? 'disabled style="opacity: 0.5;"' : ''}>
-                                    <i class="fas fa-plus"></i>
+                cartItems.innerHTML = items.map(item => {
+                    subtotal += item.subtotal;
+                    return `
+                        <div class="flex items-center gap-4 p-4 border rounded-lg mb-4 hover:shadow-md transition-shadow" id="cart-item-${item.cart_id}">
+                            <img src="${item.image_url || 'https://via.placeholder.com/100'}" 
+                                 alt="${item.name}"
+                                 class="w-24 h-24 object-cover rounded-lg"
+                                 onerror="this.src='https://via.placeholder.com/100'">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-lg">${item.name}</h3>
+                                <p class="text-green-600 price" data-price="${item.price}">₹${item.price.toFixed(2)}/kg</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <button onclick="updateQuantity(${item.product_id}, ${item.quantity - 1})"
+                                            class="quantity-btn rounded px-3 py-1 bg-gray-100 hover:bg-green-500 hover:text-white transition-colors"
+                                            ${item.quantity <= 1 ? 'disabled style="opacity: 0.5;"' : ''}>
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <span class="px-4 py-1 border rounded quantity">${item.quantity}</span>
+                                    <button onclick="updateQuantity(${item.product_id}, ${item.quantity + 1})"
+                                            class="quantity-btn rounded px-3 py-1 bg-gray-100 hover:bg-green-500 hover:text-white transition-colors"
+                                            ${item.quantity >= item.stock ? 'disabled style="opacity: 0.5;"' : ''}>
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold subtotal">₹${item.subtotal.toFixed(2)}</p>
+                                <button onclick="removeFromCart(${item.cart_id})"
+                                        class="mt-2 text-red-500 hover:text-red-700 transition-colors">
+                                    <i class="fas fa-trash"></i> Remove
                                 </button>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="font-bold">₹${item.subtotal.toFixed(2)}</p>
-                            <button onclick="removeFromCart(${item.cart_id})"
-                                    class="mt-2 text-red-500 hover:text-red-700 transition-colors">
-                                <i class="fas fa-trash"></i> Remove
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
 
                 // Update summary
-                if (cartSummary) {
-                    const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-                    const deliveryFee = 40;
-                    const total = subtotal + deliveryFee;
+                const deliveryFee = 40;
+                const total = subtotal + deliveryFee;
 
+                if (cartSummary) {
                     cartSummary.classList.remove('hidden');
                     cartSummary.innerHTML = `
                         <div class="border-t pt-4">
                             <div class="flex justify-between mb-2">
                                 <span class="text-gray-600">Subtotal</span>
-                                <span>₹${subtotal.toFixed(2)}</span>
+                                <span id="subtotal">₹${subtotal.toFixed(2)}</span>
                             </div>
                             <div class="flex justify-between mb-2">
                                 <span class="text-gray-600">Delivery Fee</span>
@@ -253,7 +256,7 @@
                             </div>
                             <div class="flex justify-between font-bold text-lg border-t pt-2">
                                 <span>Total</span>
-                                <span>₹${total.toFixed(2)}</span>
+                                <span id="total">₹${total.toFixed(2)}</span>
                             </div>
                             <button onclick="proceedToCheckout()" 
                                     class="w-full mt-4 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors">
@@ -268,12 +271,33 @@
             }
         }
 
-        async function updateQuantity(productId, newQuantity) {
-            if (newQuantity < 1) {
-                await removeFromCart(productId);
-                return;
+        function calculateCartTotal() {
+            const cartItems = document.querySelectorAll('[id^="cart-item-"]');
+            let subtotal = 0;
+            
+            cartItems.forEach(item => {
+                const price = parseFloat(item.querySelector('.price').dataset.price);
+                const quantity = parseInt(item.querySelector('.quantity').textContent);
+                subtotal += price * quantity;
+            });
+
+            const deliveryFee = 40;
+            const total = subtotal + deliveryFee;
+
+            // Update summary display
+            document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+            document.getElementById('total').textContent = `₹${total.toFixed(2)}`;
+            
+            // Update checkout button
+            const checkoutBtn = document.querySelector('button[onclick="proceedToCheckout()"]');
+            if (checkoutBtn) {
+                checkoutBtn.innerHTML = `Proceed to Checkout (₹${total.toFixed(2)})`;
             }
 
+            return total;
+        }
+
+        async function updateQuantity(productId, newQuantity) {
             try {
                 const response = await fetch('/cart/update', {
                     method: 'POST',
@@ -288,16 +312,22 @@
                     credentials: 'include'
                 });
 
-                const result = await response.json();
                 if (!response.ok) {
-                    throw new Error(result.error || 'Failed to update cart');
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to update cart');
                 }
 
-                // Reload cart to show updated quantities
-                loadCart();
-                showNotification('Cart updated successfully');
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Reload cart to show updated state
+                    await loadCart();
+                    showNotification('Cart updated successfully');
+                } else {
+                    showNotification(result.error || 'Failed to update quantity', 'error');
+                }
             } catch (error) {
-                console.error('Error updating cart:', error);
+                console.error('Error updating quantity:', error);
                 showNotification(error.message || 'Failed to update cart', 'error');
             }
         }
@@ -332,10 +362,13 @@
         }
 
         function updateCartQuantity(cartId, newQuantity) {
+            if (newQuantity < 1) return;
+
             fetch(`/cart/update/${cartId}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({ quantity: newQuantity }),
                 credentials: 'include'
@@ -343,21 +376,15 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update subtotal display
-                    document.getElementById(`subtotal-${cartId}`).textContent = 
-                        `₹${data.new_subtotal.toFixed(2)}`;
-                    // Recalculate cart total
-                    calculateCartTotal();
+                    loadCart(); // Reload the entire cart to update all values
+                    showNotification('Cart updated successfully');
                 } else {
-                    alert(data.error || 'Failed to update quantity');
-                    // Reset quantity input to previous value
-                    loadCartItems();
+                    showNotification(data.error || 'Failed to update quantity', 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to update cart');
-                loadCartItems();
+                showNotification('Failed to update cart', 'error');
             });
         }
 
