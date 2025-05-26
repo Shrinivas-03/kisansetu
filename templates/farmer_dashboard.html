@@ -223,59 +223,92 @@
         }
 
         function loadProducts() {
-            const farmerId = {{ session.get('user_id') }};
-            fetch(`/get_farmer_products/${farmerId}`)
-                .then(response => response.json())
-                .then(products => {
-                    const productsList = document.getElementById('productsList');
-                    const productsCount = document.getElementById('productsCount');
-                    
-                    if (productsCount) {
-                        productsCount.textContent = products.length;
-                    }
+            const farmerId = {{ session.get('user_id', 'null') }};
+            if (!farmerId) {
+                showNotification('Session expired. Please log in again.', 'error');
+                window.location.href = '/login';
+                return;
+            }
 
-                    productsList.innerHTML = products.length ? products.map(product => `
-                        <div class="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
-                            <div class="flex items-start gap-4">
-                                <img src="${product.image_url}" 
-                                     alt="${product.name}" 
-                                     class="w-24 h-24 object-cover rounded"
-                                     onerror="this.src='https://via.placeholder.com/200x200?text=${encodeURIComponent(product.name)}'">
-                                <div class="flex-1">
-                                    <h4 class="font-bold">${product.name}</h4>
-                                    <p class="text-gray-600">${product.category}</p>
-                                    <p class="text-gray-600">₹${product.price}/kg</p>
-                                    <p class="text-gray-600">Stock: ${product.stock}kg</p>
-                                    <div class="mt-2 flex items-center gap-2">
-                                        ${getProductStatus(product)}
-                                    </div>
-                                    <div class="mt-4">
-                                        ${product.stock === 0 ? `
-                                            <button onclick="refillStock(${product.id})"
-                                                    class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
-                                                Refill Stock
-                                            </button>
-                                        ` : `
-                                            <button disabled class="bg-gray-300 text-gray-500 px-4 py-2 rounded-lg cursor-not-allowed">
-                                                Stock Available
-                                            </button>
-                                        `}
-                                    </div>
-                                </div>
-                                <!-- Add remove button -->
-                                <button onclick="removeProduct('${product.id}')"
-                                        class="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors">
-                                    <i class="fas fa-trash"></i>
+            fetch(`/get_farmer_products/${farmerId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Please log in again');
+                    }
+                    throw new Error('Failed to load products');
+                }
+                return response.json();
+            })
+            .then(products => {
+                if (!Array.isArray(products)) {
+                    throw new Error('Invalid response format');
+                }
+
+                const productsList = document.getElementById('productsList');
+                if (productsList) {
+                    if (products.length === 0) {
+                        productsList.innerHTML = `
+                            <div class="col-span-full text-center py-8">
+                                <p class="text-gray-500">No products listed yet</p>
+                                <button onclick="window.location.href='/farmer/add_product'" 
+                                        class="mt-4 secondary-btn px-4 py-2 rounded-lg">
+                                    <i class="fas fa-plus"></i> Add Your First Product
                                 </button>
                             </div>
+                        `;
+                    } else {
+                        productsList.innerHTML = products.map(product => `
+                            <div class="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                                <div class="flex items-start gap-4">
+                                    <img src="${product.image_url || ''}" 
+                                         alt="${product.name}" 
+                                         class="w-24 h-24 object-cover rounded"
+                                         onerror="this.src='https://via.placeholder.com/200x200?text=${encodeURIComponent(product.name)}'">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold">${product.name}</h4>
+                                        <p class="text-gray-600">${product.category}</p>
+                                        <p class="text-gray-600">₹${product.price}/kg</p>
+                                        <p class="text-gray-600">Stock: ${product.stock}kg</p>
+                                        <div class="mt-2 flex items-center gap-2">
+                                            ${getProductStatus(product)}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+                
+                // Update products count
+                const productsCount = document.getElementById('productsCount');
+                if (productsCount) {
+                    productsCount.textContent = products.length;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading products:', error);
+                const productsList = document.getElementById('productsList');
+                if (productsList) {
+                    productsList.innerHTML = `
+                        <div class="col-span-full text-center py-8">
+                            <p class="text-red-500">${error.message || 'Failed to load products'}</p>
+                            <button onclick="loadProducts()" 
+                                    class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                                <i class="fas fa-sync"></i> Retry
+                            </button>
                         </div>
-                    `).join('') : '<p class="text-gray-500 col-span-full text-center">No products listed yet</p>';
-                })
-                .catch(error => {
-                    console.error('Error loading products:', error);
-                    document.getElementById('productsList').innerHTML = 
-                        '<p class="text-red-500 col-span-full text-center">Error loading products. Please try again later.</p>';
-                });
+                    `;
+                }
+                showNotification(error.message || 'Failed to load products', 'error');
+            });
         }
 
         async function refillStock(productId) {
