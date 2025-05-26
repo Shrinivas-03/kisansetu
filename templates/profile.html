@@ -59,9 +59,17 @@
         </div>
     </nav>
 
+    {% extends "base.html" %}
+
+    {% block title %}My Profile - KisanSetu{% endblock %}
+
+    {% block content %}
     <div class="container mx-auto px-4 py-8 pt-20">
-        <!-- Grid container for side by side layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+            <h1 class="text-3xl font-bold mb-8 text-gray-800 flex items-center gap-3">
+                <i class="fas fa-user text-[#4CAF50]"></i>
+                My Profile
+            </h1>
             <!-- Profile Info Card -->
             <div class="profile-card p-8">
                 <div class="text-center">
@@ -141,6 +149,7 @@
             </div>
         </div>
     </div>
+    {% endblock %}
 
     <script>
         class ProfileManager {

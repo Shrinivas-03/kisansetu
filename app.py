@@ -26,9 +26,9 @@ app.config['MAIL_PASSWORD'] = 'xldaufoufokehnjl'  # Updated password
 app.config['MAIL_DEFAULT_SENDER'] = 'ainewshub89@gmail.com'  # Updated sender email
 
 # File upload configuration
-app.config['UPLOAD_FOLDER'] = 'e:/kisansetu/static/product_images'
+app.config['UPLOAD_FOLDER'] = 'N:\kisansetu\static\product_images'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif','webp'}
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -1991,7 +1991,7 @@ def remove_from_cart(cart_id):
         # Delete the cart item
         supabase.table('cart').delete().eq('id', cart_id).execute()
 
-        # Get updated cart count - get all remaining cart items for the user
+        # Get updated cart count - get all remaining cart items for
         remaining_cart_resp = supabase.table('cart').select('*').eq('user_id', session['user_id']).execute()
         cart_count = len(remaining_cart_resp.data) if remaining_cart_resp.data else 0
 
@@ -2003,6 +2003,93 @@ def remove_from_cart(cart_id):
 
     except Exception as e:
         print(f"Error removing from cart: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/cart/update/<int:cart_id>', methods=['POST'])
+def update_cart_quantity(cart_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    try:
+        data = request.json
+        change = data.get('change', 0)  # Can be 1 or -1
+        
+        # Get current cart item
+        cart_resp = supabase.table('cart').select('*').eq('id', cart_id).eq('user_id', session['user_id']).execute()
+        cart_item = cart_resp.data[0] if cart_resp.data else None
+        
+        if not cart_item:
+            # Get product ID from data or cart history
+            product_id = data.get('product_id')
+            if not product_id:
+                # Try to get the last cart item's product ID
+                last_cart = supabase.table('cart').select('product_id').eq('user_id', session['user_id']).order('created_at', desc=True).limit(1).execute()
+                product_id = last_cart.data[0]['product_id'] if last_cart.data else None
+            
+            if product_id:
+                product_resp = supabase.table('products').select('*').eq('id', product_id).execute()
+                product = product_resp.data[0] if product_resp.data else None
+                
+                if product:
+                    # Create new cart item with quantity 1
+                    new_cart_item = {
+                        'user_id': session['user_id'],
+                        'product_id': product_id,
+                        'quantity': 1,
+                        'created_at': datetime.now(timezone.utc).isoformat(),
+                        'updated_at': datetime.now(timezone.utc).isoformat()
+                    }
+                    
+                    cart_resp = supabase.table('cart').insert(new_cart_item).execute()
+                    cart_item = cart_resp.data[0]
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': 'Item added to cart',
+                        'quantity': 1,
+                        'subtotal': float(product['price']),
+                        'unit_price': float(product['price']),
+                        'cart_id': cart_item['id']
+                    })
+
+        # Calculate new quantity
+        new_quantity = cart_item['quantity'] + change
+
+        if new_quantity < 1:
+            return jsonify({'error': 'Quantity cannot be less than 1'}), 400
+
+        # Get product details to check stock
+        product_resp = supabase.table('products').select('*').eq('id', cart_item['product_id']).execute()
+        product = product_resp.data[0] if product_resp.data else None
+        
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+
+        if product['stock'] < new_quantity:
+            return jsonify({
+                'error': 'Not enough stock available',
+                'available_stock': product['stock']
+            }), 400
+
+        # Update cart item quantity
+        supabase.table('cart').update({
+            'quantity': new_quantity,
+            'updated_at': datetime.now(timezone.utc).isoformat()
+        }).eq('id', cart_id).execute()
+
+        # Calculate new subtotal
+        subtotal = float(product['price']) * new_quantity
+
+        return jsonify({
+            'success': True,
+            'message': 'Quantity updated successfully',
+            'quantity': new_quantity,
+            'subtotal': subtotal,
+            'unit_price': float(product['price'])
+        })
+
+    except Exception as e:
+        print(f"Error updating cart quantity: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/test-email')

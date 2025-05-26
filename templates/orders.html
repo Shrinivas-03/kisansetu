@@ -66,37 +66,22 @@
     </script>
 
     <!-- Main Content -->
-    <div class="container mx-auto px-4 py-8 pt-20 max-w-7xl">
-        <div class="bg-gradient-to-br from-pink-100 to-pink-50 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+    <div class="container mx-auto px-4 py-8 pt-20">
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
             <div class="flex justify-between items-center mb-6">
-                <div class="flex items-center gap-2">
-                   
-                    <h1 class="text-3xl md:text-4xl font-bold text-white">KisanSetu</h1>
-                </div>
-                <div class="flex items-center space-x-6">
-                    <a href="/customer/dashboard" class="hover:text-gray-200 transition-colors">Home</a>
-                    <a href="/about" class="hover:text-gray-200 transition-colors">About</a>
-                    <a href="/cart" class="hover:text-gray-200 transition-colors">
-                </div>
-                <div class="flex gap-4">
-                    <select id="statusFilter" class="filter-dropdown">
+                <h1 class="text-3xl font-bold text-gray-800">My Orders</h1>
+                <div class="flex gap-2">
+                    <select id="statusFilter" class="rounded-lg border-gray-300 shadow-sm">
                         <option value="all">All Orders</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
-                    </select>
-                    <select id="sortFilter" class="filter-dropdown">
-                        <option value="date-desc">Newest First</option>
-                        <option value="date-asc">Oldest First</option>
-                        <option value="price-high">Price: High to Low</option>
-                        <option value="price-low">Price: Low to High</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
             </div>
-
-            <!-- Orders Grid - Updated for 4 columns -->
-            <div id="ordersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            
+            <div id="ordersList" class="space-y-4">
                 <!-- Orders will be loaded here -->
             </div>
         </div>
@@ -170,121 +155,100 @@
                     this.displayOrders(orders);
                 } catch (error) {
                     console.error('Error loading orders:', error);
-                    this.showError('Failed to load orders. Please try refreshing the page.');
-                    
-                    // Show user-friendly error message in the orders container
-                    const container = document.getElementById('ordersList');
-                    if (container) {
-                        container.innerHTML = `
-                            <div class="col-span-full text-center py-8">
-                                <i class="fas fa-exclamation-circle text-red-500 text-5xl mb-4"></i>
-                                <p class="text-gray-700">Unable to load your orders</p>
-                                <button onclick="window.location.reload()" 
-                                        class="mt-4 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors">
-                                    Try Again
-                                </button>
-                            </div>`;
-                    }
+                    this.showError('Failed to load orders');
                 }
             }
 
             displayOrders(orders) {
                 const container = document.getElementById('ordersList');
                 if (!orders || orders.length === 0) {
-                    container.innerHTML = `
-                        <div class="col-span-full text-center py-8">
-                            <i class="fas fa-box-open text-gray-400 text-5xl mb-4"></i>
-                            <p class="text-gray-500">No orders found</p>
-                            <a href="/customer/dashboard" class="inline-block mt-4 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors">
-                                Start Shopping
-                            </a>
-                        </div>`;
+                    container.innerHTML = this.getEmptyState();
                     return;
                 }
 
-                container.innerHTML = orders.map(order => `
-                    <div class="order-card p-4">
-                        <!-- Order Header -->
-                        <div class="flex justify-between items-start mb-3">
+                container.innerHTML = orders.map(order => this.getOrderCard(order)).join('');
+            }
+
+            getOrderCard(order) {
+                return `
+                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h3 class="font-bold">Order #${order.id}</h3>
-                                <p class="text-sm text-gray-600">${new Date(order.order_date).toLocaleDateString()}</p>
+                                <h3 class="font-bold text-lg">Order #${order.id}</h3>
+                                <p class="text-gray-600">
+                                    Placed on ${new Date(order.order_date).toLocaleDateString()}
+                                </p>
                             </div>
-                            <span class="px-2 py-1 rounded-full text-xs font-medium ${this.getStatusColor(order.status)}">
+                            <span class="px-3 py-1 rounded-full ${this.getStatusClass(order.status)}">
                                 ${order.status}
                             </span>
                         </div>
-
-                        <!-- Order Timeline -->
-                        <div class="order-timeline">
-                            <div class="timeline-dot ${order.status !== 'Cancelled' ? 'order-status-active' : 'bg-red-500'}"></div>
-                            <div class="timeline-line ${order.status === 'Confirmed' || order.status === 'Delivered' ? 'bg-green-500' : 'bg-gray-300'}"></div>
-                            <div class="timeline-dot ${order.status === 'Confirmed' || order.status === 'Delivered' ? 'order-status-active' : 'order-status-pending'}"></div>
-                            <div class="timeline-line ${order.status === 'Delivered' ? 'bg-green-500' : 'bg-gray-300'}"></div>
-                            <div class="timeline-dot ${order.status === 'Delivered' ? 'order-status-active' : 'order-status-pending'}"></div>
+                        
+                        <div class="border-t border-gray-200 mt-4 pt-4">
+                            <div class="space-y-2">
+                                ${this.getOrderItems(order.items)}
+                            </div>
+                            <div class="mt-4 flex justify-between items-center">
+                                <span class="font-bold">Total: ₹${order.total_amount}</span>
+                                ${this.getOrderActions(order)}
+                            </div>
                         </div>
+                    </div>
+                `;
+            }
 
-                        <!-- Order Items -->
-                        <div class="space-y-2 my-3">
-                            ${order.items.slice(0, 2).map(item => `
-                                <div class="flex items-center gap-2">
-                                    <img src="${item.image_url || '/static/placeholder.jpg'}" 
-                                         class="w-10 h-10 rounded object-cover"
-                                         alt="${item.name}">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium truncate">${item.name}</p>
-                                        <p class="text-xs text-gray-600">Qty: ${item.quantity}</p>
-                                    </div>
-                                    <button onclick="showFarmerInfo(${JSON.stringify(item.farmer)})" 
-                                            class="text-blue-600 hover:text-blue-800 text-sm">
-                                        View Details
-                                    </button>
-                                </div>
-                            `).join('')}
-                            ${order.items.length > 2 ? 
-                                `<p class="text-xs text-gray-500">+${order.items.length - 2} more items</p>` : ''}
-                        </div>
-
-                        <!-- Order Footer -->
-                        <div class="flex justify-between items-center border-t pt-3">
-                            <p class="font-bold">₹${order.total_amount}</p>
-                            <button onclick="ordersManager.viewOrderDetails('${order.id}')"
-                                    class="text-sm text-blue-600 hover:text-blue-800">
-                                View Details
-                            </button>
-                        </div>
-
-                        ${order.status === 'Pending' ? `
-                            <button onclick="ordersManager.cancelOrder('${order.id}')"
-                                    class="w-full mt-2 text-red-600 text-sm hover:text-red-800">
-                                Cancel Order
-                            </button>
-                        ` : ''}
+            getOrderItems(items) {
+                return items.map(item => `
+                    <div class="flex justify-between">
+                        <span>${item.name} × ${item.quantity}</span>
+                        <span>₹${item.price * item.quantity}</span>
                     </div>
                 `).join('');
             }
 
-            getStatusColor(status) {
-                const colors = {
+            getOrderActions(order) {
+                if (order.status === 'Pending') {
+                    return `
+                        <button onclick="ordersManager.cancelOrder(${order.id})"
+                                class="text-red-600 hover:text-red-700">
+                            Cancel Order
+                        </button>
+                    `;
+                }
+                return '';
+            }
+
+            getStatusClass(status) {
+                const classes = {
                     'Pending': 'bg-yellow-100 text-yellow-800',
-                    'Confirmed': 'bg-blue-100 text-blue-800',
+                    'Processing': 'bg-blue-100 text-blue-800',
                     'Delivered': 'bg-green-100 text-green-800',
                     'Cancelled': 'bg-red-100 text-red-800'
                 };
-                return colors[status] || 'bg-gray-100 text-gray-800';
+                return classes[status] || 'bg-gray-100 text-gray-800';
             }
 
-            filterOrders() {
-                this.loadOrders();  // This will now use the status filter
+            getEmptyState() {
+                return `
+                    <div class="text-center py-8">
+                        <i class="fas fa-shopping-bag text-gray-400 text-5xl mb-4"></i>
+                        <p class="text-gray-500 mb-4">No orders found</p>
+                        <a href="/customer/dashboard" 
+                           class="inline-block bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                            Start Shopping
+                        </a>
+                    </div>
+                `;
             }
 
             async cancelOrder(orderId) {
-                if (!confirm('Are you sure you want to cancel this order?')) return;
+                if (!confirm('Are you sure you want to cancel this order?')) {
+                    return;
+                }
 
                 try {
                     const response = await fetch(`/cancel_order/${orderId}`, {
-                        method: 'POST',
-                        credentials: 'include'
+                        method: 'POST'
                     });
                     const result = await response.json();
                     
@@ -301,150 +265,15 @@
             }
 
             showNotification(message, type = 'success') {
-                const notification = document.createElement('div');
-                notification.textContent = message;
-                notification.className = `fixed bottom-4 right-4 p-4 rounded-lg ${
-                    type === 'success' ? 'bg-green-500' : 'bg-red-500'
-                } text-white`;
-                document.body.appendChild(notification);
-                setTimeout(() => notification.remove(), 3000);
+                // Add your notification logic here
             }
 
             showError(message) {
                 this.showNotification(message, 'error');
             }
-
-            sortOrders(orders, sortBy) {
-                return orders.sort((a, b) => {
-                    switch (sortBy) {
-                        case 'date-desc':
-                            return new Date(b.order_date) - new Date(a.order_date);
-                        case 'date-asc':
-                            return new Date(a.order_date) - new Date(b.order_date);
-                        case 'price-high':
-                            return b.total_amount - a.total_amount;
-                        case 'price-low':
-                            return a.total_amount - b.total_amount;
-                        default:
-                            return 0;
-                    }
-                });
-            }
-
-            viewOrderDetails(orderId) {
-                // Implement modal or redirect to order details page
-                window.location.href = `/order/${orderId}`;
-            }
-        }
-
-        function clearFilters() {
-            document.getElementById('statusFilter').value = 'all';
-            ordersManager.filterOrders();
         }
 
         const ordersManager = new OrdersManager();
-
-        document.addEventListener('DOMContentLoaded', () => {
-            setInterval(() => {
-                // Update wishlist count every 5 seconds
-                fetch('/get_wishlist', { credentials: 'include' })
-                    .then(response => response.json())
-                    .then(wishlist => {
-                        document.querySelectorAll('.wishlist-count').forEach(el => {
-                            el.textContent = wishlist.length || '0';
-                        });
-                    })
-                    .catch(error => console.error('Error updating wishlist count:', error));
-            }, 5000);
-        });
-
-        function toggleProfileMenu() {
-            const profileMenu = document.getElementById('profileMenu');
-            profileMenu.classList.toggle('hidden');
-        }
-
-        document.getElementById('sortFilter')?.addEventListener('change', (e) => {
-            const orders = JSON.parse(localStorage.getItem('currentOrders') || '[]');
-            const sorted = ordersManager.sortOrders(orders, e.target.value);
-            ordersManager.displayOrders(sorted);
-        });
-    </script>
-
-    <div id="farmerInfoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 relative">
-            <!-- Close button -->
-            <button onclick="closeFarmerInfo()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-            
-            <!-- Farmer Info Content -->
-            <div class="mb-4 text-center">
-                <img id="farmerImage" class="w-20 h-20 rounded-full mx-auto mb-3" src="" alt="Farmer">
-                <h3 id="farmerName" class="text-xl font-bold text-gray-800"></h3>
-                <p id="farmerLocation" class="text-gray-600 text-sm"></p>
-            </div>
-
-            <div class="space-y-3">
-                <div>
-                    <h4 class="font-semibold text-gray-700">About the Product</h4>
-                    <p id="productDescription" class="text-gray-600 text-sm mt-1"></p>
-                </div>
-                <div>
-                    <h4 class="font-semibold text-gray-700">Farming Method</h4>
-                    <p id="farmingMethod" class="text-gray-600 text-sm mt-1"></p>
-                </div>
-                <div>
-                    <h4 class="font-semibold text-gray-700">Contact Information</h4>
-                    <p id="farmerContact" class="text-gray-600 text-sm mt-1"></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function showFarmerInfo(farmer) {
-            // Update modal content
-            document.getElementById('farmerImage').src = farmer.image;
-            document.getElementById('farmerName').textContent = farmer.name;
-            document.getElementById('farmerLocation').textContent = farmer.location;
-            document.getElementById('productDescription').textContent = farmer.description || 'No description available';
-            document.getElementById('farmingMethod').textContent = farmer.farmingMethod;
-            document.getElementById('farmerContact').textContent = farmer.contact;
-
-            // Show modal with fade-in animation
-            const modal = document.getElementById('farmerInfoModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            modal.style.opacity = '0';
-            setTimeout(() => {
-                modal.style.opacity = '1';
-                modal.style.transition = 'opacity 0.3s ease-in-out';
-            }, 10);
-        }
-
-        function closeFarmerInfo() {
-            // Hide modal with fade-out animation
-            const modal = document.getElementById('farmerInfoModal');
-            modal.style.opacity = '0';
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }, 300);
-        }
-
-        // Close modal when clicking outside
-        document.getElementById('farmerInfoModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeFarmerInfo();
-            }
-        });
-
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeFarmerInfo();
-            }
-        });
     </script>
 </body>
 </html>
